@@ -1,0 +1,79 @@
+---
+- name: Create service user
+  ansible.builtin.user:
+    name: "{{ service_user }}"
+    comment: "gitlab service user"
+    shell: /bin/bash
+    create_home: true
+    password: "{{ service_user_password if (service_user_password is defined and service_user_password) else omit }}"
+    update_password: "{{ 'always' if (service_user_password is defined and service_user_password) else omit }}"
+    state: present
+
+- name: Get service user UID
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ service_user }}"
+  register: gitlab_service_service_user_info
+
+- name: Set service user UID fact
+  ansible.builtin.set_fact:
+    service_service_user_uid: >-
+      {{
+        gitlab_service_service_user_info
+        .ansible_facts
+        .getent_passwd[service_user][1]
+      }}
+
+- name: Check if lingering is enabled
+  ansible.builtin.command: loginctl show-user {{ service_user }} -p Linger
+  register: service_linger_check
+  failed_when: false
+  changed_when: false
+
+- name: Enable lingering if needed
+  ansible.builtin.command:
+    cmd: loginctl enable-linger {{ service_user }}
+  changed_when: "'Linger=yes' not in service_linger_check.stdout"
+  when: "'Linger=yes' not in service_linger_check.stdout"
+
+- name: Ensure user systemd instance is running
+  ansible.builtin.systemd:
+    name: "user@{{ service_service_user_uid }}.service"
+    state: started
+    scope: system
+
+- name: Wait for user bus socket to be available
+  ansible.builtin.wait_for:
+    path: "/run/user/{{ service_service_user_uid }}/bus"
+    timeout: 30
+
+- name: Resolve deploy public key path
+  ansible.builtin.set_fact:
+    deploy_ssh_pubkey_path: "{{ deploy_ssh_pubkey_file | default(lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
+  when: ansible_connection != 'local'
+
+- name: Verify deploy public key exists on the control machine
+  ansible.builtin.stat:
+    path: "{{ deploy_ssh_pubkey_path }}"
+  delegate_to: localhost
+  become: false
+  register: deploy_ssh_pubkey_stat
+  when: ansible_connection != 'local'
+
+- name: Fail with guidance if the deploy public key is missing
+  ansible.builtin.fail:
+    msg: >-
+      Deploy public key not found at "{{ deploy_ssh_pubkey_path }}" on the control
+      machine. Set deploy_ssh_pubkey_file to the correct path, or generate a key
+      with: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519
+  when:
+    - ansible_connection != 'local'
+    - not deploy_ssh_pubkey_stat.stat.exists
+
+- name: Authorize deploy key for service user
+  ansible.posix.authorized_key:
+    user: "{{ service_user }}"
+    state: present
+    key: "{{ lookup('file', deploy_ssh_pubkey_path) }}"
+  when: ansible_connection != 'local'
+

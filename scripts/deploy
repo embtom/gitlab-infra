@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -eu
+HOST="${1:?Usage: $0 <host-or-ip>}"
+
+# Local targets have no SSH server; connect directly instead of over ssh.
+# They also already run as the invoking user, so no sudo password is needed.
+CONN_ARGS=()
+BECOME_ARGS=(--ask-become-pass)
+case "${HOST}" in
+localhost | 127.0.0.1 | ::1)
+	CONN_ARGS=(--connection=local)
+	;;
+esac
+
+# Skip the become-password prompt if the caller says sudo needs no password, e.g.
+#   ASK_BECOME_PASS=0 ./scripts/deploy myhost
+if [ "${ASK_BECOME_PASS:-1}" = "0" ]; then
+	BECOME_ARGS=()
+fi
+
+VAULT_ARGS=()
+if [ "${ASK_VAULT_PASS:-0}" = "1" ]; then
+	VAULT_ARGS=(--ask-vault-pass)
+fi
+
+USER_BIN_PATH="$(python3 -m site --user-base)/bin"
+export PATH="${PATH}:${USER_BIN_PATH}"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+(
+	cd "${SCRIPT_DIR}/.."
+	ansible-playbook \
+		-i "${HOST}," ansible/gitlab_setup.yml \
+		"${CONN_ARGS[@]}" "${BECOME_ARGS[@]}" "${VAULT_ARGS[@]}"
+)

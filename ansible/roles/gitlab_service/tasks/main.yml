@@ -1,0 +1,6 @@
+---
+- name: Create and configure service user
+  become: true
+  block:
+    - name: Include service user tasks
+      ansible.builtin.include_tasks: user.yml

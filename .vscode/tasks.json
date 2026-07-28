@@ -1,0 +1,72 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ansible: install",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/install-requirements && ${workspaceFolder}/scripts/install-ansible",
+            "problemMatcher": []
+        },
+        {
+            "label": "ansible: lint",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/ansible-lint",
+            "args": [
+                "${input:ansibleLint}"
+            ],
+            "problemMatcher": [
+                {
+                    "owner": "yamllint",
+                    "fileLocation": "absolute",
+                    "severity": "error",
+                    "pattern": {
+                        "regexp": "^(.+):(\\d+):(\\d+): \\[(error|warning)\\] (.+)$",
+                        "file": 1,
+                        "line": 2,
+                        "column": 3,
+                        "severity": 4,
+                        "message": 5
+                    }
+                },
+                {
+                    "owner": "ansible-lint",
+                    "fileLocation": "absolute",
+                    "pattern": [
+                        {
+                            "regexp": "^([\\w-]+(?:\\[[\\w-]+\\])?): (.+)$",
+                            "message": 2
+                        },
+                        {
+                            "regexp": "^(.+):(\\d+)(?::(\\d+))? Task/Handler:",
+                            "file": 1,
+                            "line": 2,
+                            "column": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "ansible: run ansible playbook",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/deploy",
+            "args": [
+                "${input:targetHost}"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "Run Ansible playbook for deployment"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "targetHost",
+            "type": "promptString",
+            "description": "Enter the target host for Ansible playbook execution"
+        }
+    ]
+}
