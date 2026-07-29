@@ -8,14 +8,14 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-SERVICE_USER="${1:-gitlab}"
+gitlab_service_user="${1:-gitlab}"
 SERVICE_NAME="${2:-gitlab.service}"
 
 #
 # Verify that the user exists.
 #
-if ! id "$SERVICE_USER" >/dev/null 2>&1; then
-    echo "ERROR: User '$SERVICE_USER' does not exist." >&2
+if ! id "$gitlab_service_user" >/dev/null 2>&1; then
+    echo "ERROR: User '$gitlab_service_user' does not exist." >&2
     exit 1
 fi
 
@@ -24,7 +24,7 @@ fi
 #
 
 read -rp \
-    "==> This will permanently delete user '$SERVICE_USER' and ALL associated Podman resources. Continue? [y/N] " \
+    "==> This will permanently delete user '$gitlab_service_user' and ALL associated Podman resources. Continue? [y/N] " \
     confirm
 
 case "${confirm,,}" in
@@ -39,7 +39,7 @@ esac
 echo
 echo "==> Stopping user service and cleaning Podman resources"
 
-sudo -u "$SERVICE_USER" -i bash <<EOF
+sudo -u "$gitlab_service_user" -i bash <<EOF
 set +e
 
 systemctl --user stop "$SERVICE_NAME"
@@ -62,19 +62,19 @@ EOF
 echo
 echo "==> Terminating user session"
 
-loginctl disable-linger "$SERVICE_USER" 2>/dev/null || true
-loginctl terminate-user "$SERVICE_USER" 2>/dev/null || true
+loginctl disable-linger "$gitlab_service_user" 2>/dev/null || true
+loginctl terminate-user "$gitlab_service_user" 2>/dev/null || true
 
 sleep 1
 
-pkill -KILL -u "$SERVICE_USER" 2>/dev/null || true
+pkill -KILL -u "$gitlab_service_user" 2>/dev/null || true
 
 sleep 1
 
 echo
-echo "==> Removing user '$SERVICE_USER'"
+echo "==> Removing user '$gitlab_service_user'"
 
-userdel -r "$SERVICE_USER"
+userdel -r "$gitlab_service_user"
 
 echo
 echo "==> Cleanup complete."

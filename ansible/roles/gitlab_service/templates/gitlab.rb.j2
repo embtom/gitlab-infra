@@ -1,0 +1,14 @@
+## Managed by Ansible - do not edit directly.
+## Source: ansible/roles/gitlab_service/templates/gitlab.rb.j2
+## To change settings, edit the template and re-run the deploy playbook;
+## GitLab picks this up on its next `gitlab-ctl reconfigure` (container restart).
+
+external_url 'http://{{ gitlab_service_host_name }}/'
+
+gitlab_rails['env'] = {
+  'gitlab_service_log_level' => '{{ gitlab_service_log_level }}'
+}
+
+# Only takes effect on the very first reconfigure of a fresh instance (root
+# username stays 'root' - GitLab has no setting to change its email).
+gitlab_rails['initial_root_password'] = '{{ gitlab_service_root_password }}'

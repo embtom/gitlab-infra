@@ -13,9 +13,6 @@
             "label": "ansible: lint",
             "type": "shell",
             "command": "${workspaceFolder}/scripts/ansible-lint",
-            "args": [
-                "${input:ansibleLint}"
-            ],
             "problemMatcher": [
                 {
                     "owner": "yamllint",

@@ -1,0 +1,21 @@
+---
+# XDG_RUNTIME_DIR must be set explicitly: become_user (sudo -u) does not
+# reliably inherit the rootless systemd user session environment otherwise.
+- name: Reload user systemd daemon
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_user_uid }}"
+  ansible.builtin.systemd:
+    scope: user
+    daemon_reload: true
+
+- name: Restart GitLab service
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_user_uid }}"
+  ansible.builtin.systemd:
+    name: "{{ gitlab_service_name }}.service"
+    scope: user
+    state: restarted

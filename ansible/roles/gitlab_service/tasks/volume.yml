@@ -1,0 +1,29 @@
+---
+
+- name: Reset Podman storage resources when recreating data
+  when: gitlab_service_volume_recreate | default(false)
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+
+  block:
+    - name: Remove Podman volume gitlab_config
+      containers.podman.podman_volume:
+        name: gitlab_config
+        state: absent
+
+    - name: Remove Podman volume gitlab_logs
+      containers.podman.podman_volume:
+        name: gitlab_logs
+        state: absent
+
+    - name: Remove Podman volume gitlab_data
+      containers.podman.podman_volume:
+        name: gitlab_data
+        state: absent
+
+- name: Create Podman volume gitlab_config
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+  containers.podman.podman_volume:
+    name: gitlab_config
+    state: present

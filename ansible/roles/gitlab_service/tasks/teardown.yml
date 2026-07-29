@@ -1,0 +1,62 @@
+---
+- name: Check if service user exists
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ gitlab_service_user }}"
+  register: gitlab_service_user_info
+  failed_when: false
+
+- name: Run teardown only if user exists
+  when: gitlab_service_user_info.ansible_facts.getent_passwd is defined
+  block:
+    - name: Set service user UID fact
+      ansible.builtin.set_fact:
+        gitlab_service_user_uid: >-
+          {{
+            gitlab_service_user_info
+            .ansible_facts
+            .getent_passwd[gitlab_service_user][1]
+          }}
+
+    - name: Set home_dir
+      ansible.builtin.set_fact:
+        gitlab_service_home_dir: "{{ gitlab_service_user_info.ansible_facts.getent_passwd[gitlab_service_user][4] }}"
+
+    - name: Stop container service (user scope)
+      become: true
+      become_user: "{{ gitlab_service_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_user_uid }}"
+      ansible.builtin.systemd_service:
+        name: "{{ gitlab_service_name }}"
+        state: stopped
+        enabled: false
+        scope: user
+      failed_when: false
+
+    - name: Remove quadlet definition
+      become: true
+      become_user: "{{ gitlab_service_user }}"
+      ansible.builtin.file:
+        path: "{{ gitlab_service_home_dir }}/.config/containers/systemd/{{ gitlab_service_name }}.container"
+        state: absent
+
+    - name: Reload user systemd daemon
+      become: true
+      become_user: "{{ gitlab_service_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_user_uid }}"
+
+      ansible.builtin.systemd:
+        daemon_reload: true
+        scope: user
+
+    - name: Remove container
+      become: true
+      become_user: "{{ gitlab_service_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_user_uid }}"
+      containers.podman.podman_container:
+        name: "{{ gitlab_service_name }}"
+        state: absent
+      failed_when: false
