@@ -5,7 +5,7 @@ gitlab_service_image: docker.io/gitlab/gitlab-ce:19.2.0-ce.0
 gitlab_service_name: gitlab
 gitlab_service_net: gitlabnet
 gitlab_service_host_name: gitlab.example.com
-gitlab_service_volume_recreate: true
+gitlab_service_volume_recreate: false
 
 # Mapped to the container's fixed internal 80/22. Override per-inventory if
 # the host should expose GitLab directly on 80/22 (e.g. behind no reverse proxy).

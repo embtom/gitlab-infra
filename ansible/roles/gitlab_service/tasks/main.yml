@@ -28,9 +28,3 @@
   block:
     - name: Include service tasks
       ansible.builtin.include_tasks: service.yml
-
-- name: Set root password
-  become: true
-  block:
-    - name: Include root password tasks
-      ansible.builtin.include_tasks: readiness.yml

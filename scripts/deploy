@@ -1,35 +1,88 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -eu
-HOST="${1:?Usage: $0 <host-or-ip>}"
+set -euo pipefail
 
-# Local targets have no SSH server; connect directly instead of over ssh.
-# They also already run as the invoking user, so no sudo password is needed.
+HOST=""
+RECREATE=""
+
+usage() {
+  cat <<EOF
+Usage: $0 --host HOST [OPTIONS]
+
+Options:
+  -h, --host HOST          Target host or IP (required)
+  -r, --recreate BOOL      Recreate volumes (true|false)
+      --help               Show this help
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  -h | --host)
+    HOST="$2"
+    shift 2
+    ;;
+  -r | --recreate)
+    RECREATE="$2"
+    shift 2
+    ;;
+  --help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "Unknown option: $1" >&2
+    usage
+    exit 1
+    ;;
+  esac
+done
+
+[[ -n "$HOST" ]] || {
+  echo "Host is required." >&2
+  usage
+  exit 1
+}
+
+if [[ -n "$RECREATE" && ! "$RECREATE" =~ ^(true|false)$ ]]; then
+  echo "--recreate must be true or false" >&2
+  exit 2
+fi
+
+echo "Host: $HOST"
+echo "Recreate: $RECREATE"
+
 CONN_ARGS=()
-BECOME_ARGS=(--ask-become-pass)
 case "${HOST}" in
 localhost | 127.0.0.1 | ::1)
-	CONN_ARGS=(--connection=local)
-	;;
+  CONN_ARGS=(--connection=local)
+  ;;
 esac
 
-# Skip the become-password prompt if the caller says sudo needs no password, e.g.
-#   ASK_BECOME_PASS=0 ./scripts/deploy myhost
-if [ "${ASK_BECOME_PASS:-1}" = "0" ]; then
-	BECOME_ARGS=()
+EXTRA_VARS=()
+if [ -n "${RECREATE}" ]; then
+  case "${RECREATE}" in
+  true | false)
+    EXTRA_VARS=(--extra-vars "gitlab_service_volume_recreate=${RECREATE}")
+    ;;
+  *)
+    echo "--recreate must be true or false" >&2
+    exit 2
+    ;;
+  esac
 fi
 
-VAULT_ARGS=()
-if [ "${ASK_VAULT_PASS:-0}" = "1" ]; then
-	VAULT_ARGS=(--ask-vault-pass)
-fi
+BECOME_ARGS=(--ask-become-pass)
+
+echo "Connection args: ${CONN_ARGS[*]}"
+echo "Extra vars: ${EXTRA_VARS[*]}"
 
 USER_BIN_PATH="$(python3 -m site --user-base)/bin"
 export PATH="${PATH}:${USER_BIN_PATH}"
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
 (
-	cd "${SCRIPT_DIR}/.."
-	ansible-playbook \
-		-i "${HOST}," ansible/gitlab_setup.yml \
-		"${CONN_ARGS[@]}" "${BECOME_ARGS[@]}" "${VAULT_ARGS[@]}"
+  cd "${SCRIPT_DIR}/.."
+  ansible-playbook \
+    -i "${HOST}," ansible/gitlab_setup.yml \
+    "${CONN_ARGS[@]}" "${BECOME_ARGS[@]}" "${EXTRA_VARS[@]}"
 )
