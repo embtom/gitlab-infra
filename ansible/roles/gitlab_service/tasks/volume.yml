@@ -1,29 +1,21 @@
 ---
 
-- name: Reset Podman storage resources when recreating data
+- name: Remove GitLab data directories when recreating data
   when: gitlab_service_volume_recreate | default(false) | bool
   become: true
-  become_user: "{{ gitlab_service_user }}"
+  ansible.builtin.file:
+    path: "{{ gitlab_service_data_dir }}"
+    state: absent
 
-  block:
-    - name: Remove Podman volume gitlab_config
-      containers.podman.podman_volume:
-        name: gitlab_config
-        state: absent
-
-    - name: Remove Podman volume gitlab_logs
-      containers.podman.podman_volume:
-        name: gitlab_logs
-        state: absent
-
-    - name: Remove Podman volume gitlab_data
-      containers.podman.podman_volume:
-        name: gitlab_data
-        state: absent
-
-- name: Create Podman volume gitlab_config
+- name: Create GitLab data directories
   become: true
-  become_user: "{{ gitlab_service_user }}"
-  containers.podman.podman_volume:
-    name: gitlab_config
-    state: present
+  ansible.builtin.file:
+    path: "{{ gitlab_service_data_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ gitlab_service_user }}"
+    group: "{{ gitlab_service_user }}"
+    mode: "0750"
+  loop:
+    - config
+    - logs
+    - data
