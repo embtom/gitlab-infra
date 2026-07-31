@@ -1,0 +1,16 @@
+---
+- name: Podman login (rootless)
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+  containers.podman.podman_login:
+    registry: "{{ container_registry_url }}"
+    username: "{{ container_registry_username }}"
+    password: "{{ container_registry_password }}"
+  when: container_registry_auth | default(false)
+
+- name: Pull image from registry
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+  containers.podman.podman_image:
+    name: "{{ gitlab_service_image }}"
+    state: present

@@ -1,0 +1,23 @@
+[Container]
+Image={{ gitlab_service_image }}
+ContainerName={{ gitlab_service_name }}
+HostName={{ gitlab_service_host_name }}
+
+Volume=gitlab_config:/etc/gitlab
+Volume=gitlab_logs:/var/log/gitlab
+Volume=gitlab_data:/var/opt/gitlab
+
+PublishPort={{ gitlab_service_web_port }}:80
+PublishPort={{ gitlab_service_ssh_port }}:22
+
+Network={{ gitlab_service_net }}
+
+[Service]
+Restart=always
+# GitLab's own bootstrap (reconfigure + service startup) can take several
+# minutes on first run; the systemd default (90s) is too short and would
+# have systemd kill the unit before GitLab finishes starting.
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Must run as root
+if [[ $EUID -ne 0 ]]; then
+    echo "ERROR: This script must be run as root (use sudo)." >&2
+    exit 1
+fi
+
+gitlab_service_user="${1:-gitlab}"
+SERVICE_NAME="${2:-gitlab.service}"
+
+#
+# Verify that the user exists.
+#
+if ! id "$gitlab_service_user" >/dev/null 2>&1; then
+    echo "ERROR: User '$gitlab_service_user' does not exist." >&2
+    exit 1
+fi
+
+#
+# Confirm the action with the user.
+#
+
+read -rp \
+    "==> This will permanently delete user '$gitlab_service_user' and ALL associated Podman resources. Continue? [y/N] " \
+    confirm
+
+case "${confirm,,}" in
+    y|yes)
+        ;;
+    *)
+        echo "Aborted."
+        exit 0
+        ;;
+esac
+
+echo
+echo "==> Stopping user service and cleaning Podman resources"
+
+sudo -u "$gitlab_service_user" -i bash <<EOF
+set +e
+
+systemctl --user stop "$SERVICE_NAME"
+systemctl --user disable "$SERVICE_NAME"
+
+podman rm -af
+podman rmi -af
+
+podman volume ls -q | xargs -r podman volume rm
+podman secret ls -q | xargs -r podman secret rm
+
+# Remove all custom networks but keep the default one.
+podman network ls --format '{{.Name}}' \
+    | grep -v '^podman$' \
+    | xargs -r podman network rm
+
+exit 0
+EOF
+
+echo
+echo "==> Terminating user session"
+
+loginctl disable-linger "$gitlab_service_user" 2>/dev/null || true
+loginctl terminate-user "$gitlab_service_user" 2>/dev/null || true
+
+sleep 1
+
+pkill -KILL -u "$gitlab_service_user" 2>/dev/null || true
+
+sleep 1
+
+echo
+echo "==> Removing user '$gitlab_service_user'"
+
+userdel -r "$gitlab_service_user"
+
+echo
+echo "==> Cleanup complete."

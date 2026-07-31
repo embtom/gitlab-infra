@@ -1,0 +1,22 @@
+---
+# The initial root password is set via gitlab_rails['initial_root_password']
+# in gitlab.rb (see templates/gitlab.rb.j2) - it only takes effect on the very
+# first reconfigure of a fresh instance. This task just waits for that first
+# reconfigure to finish so the instance is confirmed usable.
+- name: Wait until GitLab is ready
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_user_uid }}"
+  ansible.builtin.command:
+    argv:
+      - podman
+      - exec
+      - "{{ gitlab_service_name }}"
+      - gitlab-rake
+      - gitlab:check
+  register: gitlab_service_check
+  retries: 30
+  delay: 20
+  until: gitlab_service_check.rc == 0
+  changed_when: false

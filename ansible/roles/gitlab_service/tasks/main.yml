@@ -1,0 +1,30 @@
+---
+- name: Stop and remove container service
+  become: true
+  block:
+    - name: Include teardown tasks
+      ansible.builtin.include_tasks: teardown.yml
+
+- name: Create and configure service user
+  become: true
+  block:
+    - name: Include service user tasks
+      ansible.builtin.include_tasks: user.yml
+
+- name: Pull GitLab image
+  become: true
+  block:
+    - name: Include image pull tasks
+      ansible.builtin.include_tasks: image_pull.yml
+
+- name: Ensure GitLab volumes exist
+  become: true
+  block:
+    - name: Include volume tasks
+      ansible.builtin.include_tasks: volume.yml
+
+- name: Deploy and start GitLab service
+  become: true
+  block:
+    - name: Include service tasks
+      ansible.builtin.include_tasks: service.yml
