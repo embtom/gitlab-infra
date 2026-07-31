@@ -63,7 +63,7 @@ EXTRA_VARS=()
 if [ -n "${RECREATE}" ]; then
   case "${RECREATE}" in
   true | false)
-    EXTRA_VARS=(--extra-vars "gitlab_service_volume_recreate=${RECREATE}")
+    EXTRA_VARS=(--extra-vars "{\"gitlab_service_volume_recreate\": ${RECREATE}}")
     ;;
   *)
     echo "--recreate must be true or false" >&2

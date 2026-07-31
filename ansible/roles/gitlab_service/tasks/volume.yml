@@ -1,7 +1,7 @@
 ---
 
 - name: Reset Podman storage resources when recreating data
-  when: gitlab_service_volume_recreate | default(false)
+  when: gitlab_service_volume_recreate | default(false) | bool
   become: true
   become_user: "{{ gitlab_service_user }}"
 
