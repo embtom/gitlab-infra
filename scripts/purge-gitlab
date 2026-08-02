@@ -4,19 +4,20 @@ set -euo pipefail
 
 # Must run as root
 if [[ $EUID -ne 0 ]]; then
-    echo "ERROR: This script must be run as root (use sudo)." >&2
-    exit 1
+  echo "ERROR: This script must be run as root (use sudo)." >&2
+  exit 1
 fi
 
 gitlab_service_user="${1:-gitlab}"
 SERVICE_NAME="${2:-gitlab.service}"
+GITLAB_DATA_DIR="${3:-/var/lib/gitlab}"
 
 #
 # Verify that the user exists.
 #
 if ! id "$gitlab_service_user" >/dev/null 2>&1; then
-    echo "ERROR: User '$gitlab_service_user' does not exist." >&2
-    exit 1
+  echo "ERROR: User '$gitlab_service_user' does not exist." >&2
+  exit 1
 fi
 
 #
@@ -24,16 +25,15 @@ fi
 #
 
 read -rp \
-    "==> This will permanently delete user '$gitlab_service_user' and ALL associated Podman resources. Continue? [y/N] " \
-    confirm
+  "==> This will permanently delete user '$gitlab_service_user', '$GITLAB_DATA_DIR', and ALL associated Podman resources. Continue? [y/N] " \
+  confirm
 
 case "${confirm,,}" in
-    y|yes)
-        ;;
-    *)
-        echo "Aborted."
-        exit 0
-        ;;
+y | yes) ;;
+*)
+  echo "Aborted."
+  exit 0
+  ;;
 esac
 
 echo
@@ -75,6 +75,17 @@ echo
 echo "==> Removing user '$gitlab_service_user'"
 
 userdel -r "$gitlab_service_user"
+
+echo
+echo "==> Removing GitLab data directory '$GITLAB_DATA_DIR'"
+
+resolved_data_dir="$(realpath -m -- "$GITLAB_DATA_DIR")"
+if [[ -z "$resolved_data_dir" || "$resolved_data_dir" == "/" ]]; then
+  echo "ERROR: Refusing to remove unsafe data directory: '$GITLAB_DATA_DIR'" >&2
+  exit 1
+fi
+
+rm -rf -- "$resolved_data_dir"
 
 echo
 echo "==> Cleanup complete."

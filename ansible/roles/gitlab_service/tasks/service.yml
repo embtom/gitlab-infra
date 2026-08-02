@@ -17,17 +17,16 @@
     state: directory
     mode: "0755"
 
-# Deployed straight into the named volume's backing directory so GitLab's
-# own gitlab-ctl reconfigure reads it directly - no GITLAB_OMNIBUS_CONFIG
-# env var/eval step needed. Omnibus only auto-generates a default gitlab.rb
-# when the file is missing, so seeding it here before first start means our
-# version is used from the very first boot.
+# Deploy directly into the bind-mounted configuration directory.
+# GitLab reads this file on first boot, so there is no need to use
+# GITLAB_OMNIBUS_CONFIG or write into Podman's internal volume storage.
 - name: Deploy GitLab configuration (gitlab.rb)
   become: true
-  become_user: "{{ gitlab_service_user }}"
   ansible.builtin.template:
     src: gitlab.rb.j2
-    dest: "/home/{{ gitlab_service_user }}/.local/share/containers/storage/volumes/gitlab_config/_data/gitlab.rb"
+    dest: "{{ gitlab_service_data_dir }}/config/gitlab.rb"
+    owner: "{{ gitlab_service_user }}"
+    group: "{{ gitlab_service_user }}"
     mode: "0600"
   notify:
     - Reload user systemd daemon

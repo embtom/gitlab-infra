@@ -38,11 +38,23 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$HOST" ]] || {
-  echo "Host is required." >&2
-  usage
-  exit 1
-}
+LIMIT=()
+HOST_ARGS=()
+case "${HOST}" in
+"")
+  HOST="localhost"
+  LIMIT=(--limit localhost)
+  HOST_ARGS=()
+  ;;
+localhost | 127.0.0.1 | ::1)
+  LIMIT=(--limit localhost)
+  HOST_ARGS=()
+  ;;
+*)
+  LIMIT=(--limit remote)
+  HOST_ARGS=(--extra-vars "ansible_host=${HOST}")
+  ;;
+esac
 
 if [[ -n "$RECREATE" && ! "$RECREATE" =~ ^(true|false)$ ]]; then
   echo "--recreate must be true or false" >&2
@@ -51,13 +63,6 @@ fi
 
 echo "Host: $HOST"
 echo "Recreate: $RECREATE"
-
-CONN_ARGS=()
-case "${HOST}" in
-localhost | 127.0.0.1 | ::1)
-  CONN_ARGS=(--connection=local)
-  ;;
-esac
 
 EXTRA_VARS=()
 if [ -n "${RECREATE}" ]; then
@@ -72,17 +77,20 @@ if [ -n "${RECREATE}" ]; then
   esac
 fi
 
-BECOME_ARGS=(--ask-become-pass)
-
-echo "Connection args: ${CONN_ARGS[*]}"
+echo "Limit args: ${LIMIT[*]}"
+echo "Host args: ${HOST_ARGS[*]}"
 echo "Extra vars: ${EXTRA_VARS[*]}"
 
 USER_BIN_PATH="$(python3 -m site --user-base)/bin"
 export PATH="${PATH}:${USER_BIN_PATH}"
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
 (
-  cd "${SCRIPT_DIR}/.."
+  cd "${SCRIPT_DIR}/../ansible"
   ansible-playbook \
-    -i "${HOST}," ansible/gitlab_setup.yml \
-    "${CONN_ARGS[@]}" "${BECOME_ARGS[@]}" "${EXTRA_VARS[@]}"
+    --inventory inventories/hosts.yml \
+    playbooks/gitlab_setup.yml \
+    --ask-become-pass \
+    "${LIMIT[@]}" \
+    "${HOST_ARGS[@]}" \
+    "${EXTRA_VARS[@]}"
 )
