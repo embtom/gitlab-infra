@@ -1,5 +1,0 @@
----
-- name: Set up GitLab
-  hosts: all
-  roles:
-    - gitlab_service

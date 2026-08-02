@@ -46,7 +46,7 @@
       ]
     },
     {
-      "label": "ansible: run ansible playbook",
+      "label": "ansible: deploy to host",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/deploy",
       "args": [
@@ -59,14 +59,14 @@
         "kind": "build",
         "isDefault": false
       },
-      "detail": "Run Ansible playbook for deployment"
     }
   ],
   "inputs": [
     {
       "id": "targetHost",
       "type": "promptString",
-      "description": "Enter the target host for Ansible playbook execution"
+      "description": "Enter the target host for Ansible playbook execution",
+      "default": "localhost"
     },
     {
       "id": "recreateVolumes",

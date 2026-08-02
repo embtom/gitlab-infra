@@ -1,11 +1,26 @@
 ---
 
-- name: Remove GitLab data directories when recreating data
+- name: Validate GitLab data directory before recreating data
+  when: gitlab_service_volume_recreate | default(false) | bool
+  become: true
+  ansible.builtin.assert:
+    that:
+      - gitlab_service_data_dir is match('^/.+')
+      - gitlab_service_data_dir != '/'
+    fail_msg: >-
+      gitlab_service_data_dir must be a non-root absolute path; got
+      '{{ gitlab_service_data_dir }}'.
+
+- name: Remove GitLab data subdirectories when recreating data
   when: gitlab_service_volume_recreate | default(false) | bool
   become: true
   ansible.builtin.file:
-    path: "{{ gitlab_service_data_dir }}"
+    path: "{{ gitlab_service_data_dir }}/{{ item }}"
     state: absent
+  loop:
+    - config
+    - logs
+    - data
 
 - name: Create GitLab data directories
   become: true
