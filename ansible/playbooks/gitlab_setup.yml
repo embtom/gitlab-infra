@@ -7,6 +7,11 @@
     - name: Show deployment target
       ansible.builtin.debug:
         msg: "Deploying to {{ inventory_hostname }} ({{ ansible_host | default(inventory_hostname) }})"
+      tags: [always]
 
   roles:
-    - gitlab_service
+    - role: gitlab_service
+      tags: [service]
+    - role: gitlab_user_provision
+      tags: [provision_user]
+      when: gitlab_service_provision_user_name is defined

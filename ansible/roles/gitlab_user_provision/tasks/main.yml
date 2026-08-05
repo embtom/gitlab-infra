@@ -1,0 +1,114 @@
+- name: Ensure required provisioning variables are set
+  ansible.builtin.assert:
+    that:
+      - gitlab_service_provision_user_name is defined
+      - gitlab_service_provision_user_email is defined
+      - gitlab_service_provision_user_password is defined
+    fail_msg: >-
+      gitlab_service_provision_user_name,
+      gitlab_service_provision_user_email and
+      gitlab_service_provision_user_password must all be provided.
+
+- name: Get GitLab service user entry
+  become: true
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ gitlab_service_user }}"
+  register: gitlab_user_provision_service_user_info
+
+- name: Set GitLab service user UID
+  ansible.builtin.set_fact:
+    gitlab_user_provision_service_user_uid: >-
+      {{ gitlab_user_provision_service_user_info.ansible_facts.getent_passwd[gitlab_service_user][1] }}
+
+- name: Check whether the desired GitLab user already exists
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_user_provision_service_user_uid }}"
+    GITLAB_PROVISION_USERNAME: "{{ gitlab_service_provision_user_name }}"
+    GITLAB_PROVISION_EMAIL: "{{ gitlab_service_provision_user_email }}"
+  ansible.builtin.command:
+    argv:
+      - podman
+      - exec
+      - -e
+      - GITLAB_PROVISION_USERNAME
+      - -e
+      - GITLAB_PROVISION_EMAIL
+      - "{{ gitlab_service_name }}"
+      - gitlab-rails
+      - runner
+      - >-
+        exists = User.exists?(username: ENV['GITLAB_PROVISION_USERNAME']) ||
+        User.exists?(email: ENV['GITLAB_PROVISION_EMAIL']);
+        puts(exists ? 'present' : 'absent')
+  register: gitlab_user_provision_user_check
+  changed_when: false
+
+- name: Create desired GitLab user
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_user_provision_service_user_uid }}"
+    GITLAB_PROVISION_USERNAME: "{{ gitlab_service_provision_user_name }}"
+    GITLAB_PROVISION_EMAIL: "{{ gitlab_service_provision_user_email }}"
+    GITLAB_PROVISION_PASSWORD: "{{ gitlab_service_provision_user_password }}"
+    GITLAB_PROVISION_ADMIN: "{{ gitlab_service_provision_user_admin | default(true) | string | lower }}"
+  ansible.builtin.command:
+    argv:
+      - podman
+      - exec
+      - -e
+      - GITLAB_PROVISION_USERNAME
+      - -e
+      - GITLAB_PROVISION_EMAIL
+      - -e
+      - GITLAB_PROVISION_PASSWORD
+      - -e
+      - GITLAB_PROVISION_ADMIN
+      - "{{ gitlab_service_name }}"
+      - gitlab-rails
+      - runner
+      - |
+        begin
+          # Users::CreateService (not User.new/save!) is required so the
+          # personal namespace and other creation callbacks run.
+          organization = Organizations::Organization.default_organization
+          raise StandardError, 'Default GitLab organization is missing' unless organization
+
+          response = Users::CreateService.new(nil, {
+            username: ENV['GITLAB_PROVISION_USERNAME'],
+            name: ENV['GITLAB_PROVISION_USERNAME'],
+            email: ENV['GITLAB_PROVISION_EMAIL'],
+            password: ENV['GITLAB_PROVISION_PASSWORD'],
+            password_confirmation: ENV['GITLAB_PROVISION_PASSWORD'],
+            organization_id: organization.id,
+            skip_confirmation: true
+          }).execute
+
+          raise StandardError, response.message unless response.success?
+
+          user = response.payload[:user]
+
+          user.update!(admin: true) if ENV['GITLAB_PROVISION_ADMIN'] == 'true'
+
+          puts "Created GitLab user: #{user.username}"
+        rescue StandardError => error
+          warn "#{error.class}: #{error.message}"
+          exit 1
+        end
+  register: gitlab_user_provision_user_create
+  changed_when: gitlab_user_provision_user_create.rc == 0
+  failed_when: false
+  no_log: true
+  when: gitlab_user_provision_user_check.stdout | trim == 'absent'
+
+- name: Fail when GitLab user creation was unsuccessful
+  ansible.builtin.fail:
+    msg: >-
+      GitLab user creation failed:
+      {{ gitlab_user_provision_user_create.stderr | trim }}
+  when:
+    - gitlab_user_provision_user_check.stdout | trim == 'absent'
+    - gitlab_user_provision_user_create.rc != 0

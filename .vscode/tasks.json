@@ -48,7 +48,7 @@
     {
       "label": "ansible: deploy to host",
       "type": "shell",
-      "command": "${workspaceFolder}/scripts/deploy",
+      "command": "${workspaceFolder}/scripts/deploy.py",
       "args": [
         "--host",
         "${input:targetHost}",
@@ -59,6 +59,45 @@
         "kind": "build",
         "isDefault": false
       },
+    },
+    {
+      "label": "ansible: provision user",
+      "type": "process",
+      "command": "${workspaceFolder}/scripts/deploy.py",
+      "args": [
+        "--host",
+        "${input:targetHost}",
+        "--provision-user",
+        "${input:provisionUser}",
+        "--provision-email",
+        "${input:provisionEmail}",
+        "--provision-password",
+        "${input:provisionPassword}"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+    {
+      "label": "ansible: provision administrator",
+      "type": "process",
+      "command": "${workspaceFolder}/scripts/deploy.py",
+      "args": [
+        "--host",
+        "${input:targetHost}",
+        "--provision-user",
+        "${input:provisionUser}",
+        "--provision-email",
+        "${input:provisionEmail}",
+        "--provision-password",
+        "${input:provisionPassword}",
+        "--provision-admin"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
     }
   ],
   "inputs": [
@@ -77,6 +116,24 @@
         "false"
       ],
       "default": "false"
+    },
+    {
+      "id": "provisionUser",
+      "type": "promptString",
+      "description": "Enter the username to provision",
+      "default": "newuser"
+    },
+    {
+      "id": "provisionEmail",
+      "type": "promptString",
+      "description": "Enter the email to provision",
+      "default": "user@example.com"
+    },
+    {
+      "id": "provisionPassword",
+      "type": "promptString",
+      "description": "Enter the password to provision",
+      "password": false
     }
   ]
 }
