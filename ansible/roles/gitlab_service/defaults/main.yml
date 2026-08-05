@@ -1,11 +1,10 @@
----
 gitlab_service_user: gitlab
 gitlab_service_image: docker.io/gitlab/gitlab-ce:19.2.0-ce.0
 gitlab_service_name: gitlab
 gitlab_service_net: gitlabnet
 # Uses the fully qualified hostname reported by the managed host. Override in
 # inventory when GitLab is published under a different external DNS name.
-gitlab_service_external_host: "{{ ansible_fqdn | default(ansible_hostname, true) }}"
+gitlab_service_external_host: "{{ ansible_facts['fqdn'] | default(ansible_facts['hostname'], true) }}"
 gitlab_service_volume_recreate: false
 gitlab_service_data_dir: /var/lib/gitlab
 

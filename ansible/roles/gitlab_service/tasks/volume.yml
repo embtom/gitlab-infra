@@ -1,5 +1,4 @@
 ---
-
 - name: Validate GitLab data directory before recreating data
   when: gitlab_service_volume_recreate | default(false) | bool
   become: true
@@ -34,3 +33,15 @@
     - config
     - logs
     - data
+
+# The OpenSSH daemon bundled in the image isn't exposed as a Chef attribute
+- name: Create OpenSSH "down" marker file
+  become: true
+  ansible.builtin.file:
+    path: "{{ gitlab_service_data_dir }}/sshd-down"
+    state: touch
+    owner: "{{ gitlab_service_user }}"
+    group: "{{ gitlab_service_user }}"
+    mode: "0640"
+    modification_time: preserve
+    access_time: preserve
