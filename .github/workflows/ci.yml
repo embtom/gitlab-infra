@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          ./scripts/install-requirements
+          ./scripts/install-ansible
+
+      - name: Run linters
+        run: ./scripts/ansible-lint --github-format
+
+      - name: Publish ansible-lint results
+        uses: github/codeql-action/upload-sarif@v4
+        if: >-
+          always() &&
+          !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork)
+        with:
+          sarif_file: scripts/ansible-lint.sarif
+          category: ansible-lint
