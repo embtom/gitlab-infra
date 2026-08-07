@@ -6,7 +6,7 @@ Ansible automation for deploying GitLab CE as a rootless Podman Quadlet service.
 
 - Linux target with Podman and systemd user services
 - Python 3 and `pipx` on the control machine
-- SSH access and privilege escalation on remote targets
+- Remote deployments require a working OpenSSH client configuration (for example, `~/.ssh/config` with the target host, user, and key), so `ssh <remote-host>` succeeds; privilege escalation is also required on remote targets
 
 ## Install Dependencies
 
@@ -16,12 +16,6 @@ Ansible automation for deploying GitLab CE as a rootless Podman Quadlet service.
 ```
 
 The install scripts install the Python requirements, Ansible, `ansible-lint`, `yamllint`, and the required Ansible collections.
-
-## Configure Inventory
-
-Edit [ansible/inventories/hosts.yml](ansible/inventories/hosts.yml) to configure `remote`, the inventory alias for the remote GitLab machine. `localhost` uses a local Ansible connection.
-
-The default GitLab public hostname is gathered from the managed host's FQDN. Override `gitlab_service_external_host` in inventory when GitLab is exposed through another DNS name or a reverse proxy.
 
 ## Deploy GitLab
 
@@ -34,13 +28,7 @@ Deploy locally:
 Deploy to the remote GitLab machine:
 
 ```bash
-./scripts/deploy.py --host remote
-```
-
-Deploy to a specific address, using the `remote` inventory entry:
-
-```bash
-./scripts/deploy.py --host gitlab.example.com
+./scripts/deploy.py --host <remote-host>
 ```
 
 Recreate the GitLab data directories before deployment:
@@ -49,7 +37,7 @@ Recreate the GitLab data directories before deployment:
 ./scripts/deploy.py --host localhost --recreate true
 ```
 
-The deployment prompts for the privilege-escalation password. GitLab is available at the configured external host on port `8081` by default; SSH clone traffic is mapped to port `2223`.
+The deployment prompts for the privilege-escalation password. GitLab is available at the configured external host on port `8081` by default.
 
 ## Provision Users
 
