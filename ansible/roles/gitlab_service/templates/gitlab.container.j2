@@ -1,15 +1,15 @@
 [Container]
 Image={{ gitlab_service_image }}
 ContainerName={{ gitlab_service_name }}
-HostName={{ gitlab_service_host_name }}
+HostName={{ gitlab_service_name }}
 
 Volume={{ gitlab_service_data_dir }}/config:/etc/gitlab
 Volume={{ gitlab_service_data_dir }}/logs:/var/log/gitlab
 Volume={{ gitlab_service_data_dir }}/data:/var/opt/gitlab
+# Permanently disables the OpenSSH daemon
+Volume={{ gitlab_service_data_dir }}/sshd-down:/opt/gitlab/sv/sshd/down
 
-PublishPort={{ gitlab_service_web_port }}:80
-PublishPort={{ gitlab_service_ssh_port }}:22
-
+PublishPort={{ gitlab_service_web_port }}:{{ gitlab_service_web_port }}
 Network={{ gitlab_service_net }}
 
 [Service]

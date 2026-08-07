@@ -28,3 +28,9 @@
   block:
     - name: Include service tasks
       ansible.builtin.include_tasks: service.yml
+
+- name: Wait for GitLab and apply post-start settings
+  become: true
+  block:
+    - name: Include readiness tasks
+      ansible.builtin.include_tasks: readiness.yml

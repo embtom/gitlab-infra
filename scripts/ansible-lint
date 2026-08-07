@@ -18,43 +18,48 @@ GITHUB_FORMAT=false
 REVIEWDOG=false
 
 for arg in "$@"; do
-    case "$arg" in
-        --github-format)
-            GITHUB_FORMAT=true
-            ;;
-        --reviewdog)
-            REVIEWDOG=true
-            ;;
-    esac
+  case "$arg" in
+  --github-format)
+    GITHUB_FORMAT=true
+    ;;
+  --reviewdog)
+    REVIEWDOG=true
+    ;;
+  esac
 done
 
 EXIT_CODE=0
 
 run_yamllint() {
-    if [[ "${REVIEWDOG}" == "true" ]]; then
-        yamllint --format parsable .
-    elif [[ "${GITHUB_FORMAT}" == "true" ]]; then
-        yamllint --format github .
-    else
-        yamllint .
-    fi
+  if [[ "${REVIEWDOG}" == "true" ]]; then
+    yamllint --format parsable .
+  elif [[ "${GITHUB_FORMAT}" == "true" ]]; then
+    yamllint --format github .
+  else
+    yamllint .
+  fi
+}
+
+run_ansible_syntax_check() {
+  ansible-playbook --syntax-check --inventory inventories/hosts.yml playbooks/gitlab_setup.yml
 }
 
 run_ansible_lint() {
-    if [[ "${REVIEWDOG}" == "true" ]]; then
-		ansible-lint --format=pep8 > "${LINT_FILE}" || true
-    else
-        ansible-lint
-    fi
+  if [[ "${REVIEWDOG}" == "true" ]]; then
+    ansible-lint --format=pep8 >"${LINT_FILE}" || true
+  else
+    ansible-lint
+  fi
 }
 
 generate_sarif() {
-    if [[ "${GITHUB_FORMAT}" == "true" ]]; then
-        ansible-lint -f sarif > "${SARIF_FILE}" || true
-    fi
+  if [[ "${GITHUB_FORMAT}" == "true" ]]; then
+    ansible-lint -f sarif >"${SARIF_FILE}" || true
+  fi
 }
 
 run_yamllint || EXIT_CODE=$?
+run_ansible_syntax_check || EXIT_CODE=$?
 run_ansible_lint || EXIT_CODE=$?
 
 generate_sarif

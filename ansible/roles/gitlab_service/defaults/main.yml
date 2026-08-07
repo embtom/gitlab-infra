@@ -1,20 +1,17 @@
----
 gitlab_service_user: gitlab
 gitlab_service_image: docker.io/gitlab/gitlab-ce:19.2.0-ce.0
-
 gitlab_service_name: gitlab
 gitlab_service_net: gitlabnet
-gitlab_service_host_name: gitlab.example.com
+# Uses the fully qualified hostname reported by the managed host. Override in
+# inventory when GitLab is published under a different external DNS name.
+gitlab_service_external_host: "{{ ansible_facts['fqdn'] | default(ansible_facts['hostname'], true) }}"
 gitlab_service_volume_recreate: false
 gitlab_service_data_dir: /var/lib/gitlab
 
-# Mapped to the container's fixed internal 80/22. Override per-inventory if
-# the host should expose GitLab directly on 80/22 (e.g. behind no reverse proxy).
 gitlab_service_web_port: 8081
 gitlab_service_ssh_port: 2223
-
 # One of: DEBUG, INFO, WARN, ERROR, FATAL, UNKNOWN
-gitlab_service_log_level: INFO
+gitlab_service_log_level: WARN
 
 # The initial root password is set via gitlab_rails['initial_root_password']
 gitlab_service_root_password: "X9!qL7#vN2$Kp4@Rm8"
