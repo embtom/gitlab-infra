@@ -37,7 +37,13 @@ Recreate the GitLab data directories before deployment:
 ./scripts/deploy.py --host localhost --recreate true
 ```
 
-The deployment prompts for the privilege-escalation password. GitLab is available at the configured external host on port `8081` by default.
+The deployment prompts for the privilege-escalation password. GitLab, including its package registry, is available at the configured external host on port `8081` by default. The container registry is enabled by default and is available at `http://<external-host>:5050`.
+
+The role manages separate host directories for GitLab configuration, logs, and
+persistent data. By default these are `/var/lib/gitlab/config`,
+`/var/lib/gitlab/logs`, and `/var/lib/gitlab/data`; override
+`gitlab_service_config_dir`, `gitlab_service_logs_dir`, or
+`gitlab_service_data_dir` in inventory to place them on different filesystems.
 
 ## Provision Users
 
@@ -63,6 +69,10 @@ Provision an administrator:
 `--provision-admin` is a flag; it takes no value. User provisioning is idempotent: an existing username or email is left unchanged.
 
 Avoid entering production passwords directly in a shared shell history. The VS Code provisioning tasks use a masked password prompt and pass it without shell interpretation.
+
+## Helper Commands
+
+See [doku/gitlab-helper-commands.md](doku/gitlab-helper-commands.md) for small operational helpers, including the command to list users from the running GitLab container.
 
 ## Validation
 
