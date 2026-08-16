@@ -10,8 +10,7 @@ gitlab_rails['env'] = {
 
 # Only takes effect on the very first reconfigure of a fresh instance (root
 # username stays 'root' - GitLab has no setting to change its email).
-gitlab_rails['initial_root_password'] = '{{ gitlab_service_root_password }}'
-
+{# gitlab_rails['initial_root_password'] = '{{ gitlab_service_root_password }}' #}
 # Disable GitLab's bundled SSH server.
 gitlab_sshd['enable'] = false
 
@@ -19,3 +18,13 @@ gitlab_sshd['enable'] = false
 logging['logrotate_frequency'] = 'daily'
 logging['logrotate_rotate'] = 30
 logging['logrotate_compress'] = 'compress'
+
+# Container registry settings
+{% if gitlab_service_registry_enabled | bool %}
+registry_external_url 'http://{{ gitlab_service_external_host }}:{{ gitlab_service_registry_port }}'
+gitlab_rails['registry_enabled'] = true
+registry['enable'] = true
+{% else %}
+gitlab_rails['registry_enabled'] = false
+registry['enable'] = false
+{% endif %}

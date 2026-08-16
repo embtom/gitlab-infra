@@ -1,17 +1,24 @@
 gitlab_service_user: gitlab
-gitlab_service_image: docker.io/gitlab/gitlab-ce:19.2.0-ce.0
+gitlab_service_image: docker.io/gitlab/gitlab-ce:19.2.1-ce.0
 gitlab_service_name: gitlab
 gitlab_service_net: gitlabnet
 # Uses the fully qualified hostname reported by the managed host. Override in
 # inventory when GitLab is published under a different external DNS name.
 gitlab_service_external_host: "{{ ansible_facts['fqdn'] | default(ansible_facts['hostname'], true) }}"
 gitlab_service_volume_recreate: false
-gitlab_service_data_dir: /var/lib/gitlab
+gitlab_service_config_dir: /var/lib/gitlab/config
+gitlab_service_logs_dir: /var/lib/gitlab/logs
+gitlab_service_data_dir: /var/lib/gitlab/data
 
 gitlab_service_web_port: 8081
 gitlab_service_ssh_port: 2223
+gitlab_service_registry_enabled: true
+gitlab_service_registry_port: 5050
+# Use GitLab's isolated default extension host and never fall back to the
+# GitLab origin when it is unavailable.
+gitlab_service_web_ide_single_origin_fallback_enabled: false
 # One of: DEBUG, INFO, WARN, ERROR, FATAL, UNKNOWN
 gitlab_service_log_level: WARN
 
 # The initial root password is set via gitlab_rails['initial_root_password']
-gitlab_service_root_password: "X9!qL7#vN2$Kp4@Rm8"
+# gitlab_service_root_password: "X9!qL7#vN2$Kp4@Rm8"

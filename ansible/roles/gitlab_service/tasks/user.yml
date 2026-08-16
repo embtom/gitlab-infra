@@ -47,36 +47,7 @@
     path: "/run/user/{{ gitlab_service_user_uid }}/bus"
     timeout: 30
 
-- name: Resolve deploy public key path
-  ansible.builtin.set_fact:
-    gitlab_service_deploy_ssh_pubkey_path: >-
-      {{
-        gitlab_service_deploy_ssh_pubkey_file |
-        default(lookup('env', 'HOME') + '/.ssh/id_ed25519.pub')
-      }}
-  when: ansible_connection != 'local'
-
-- name: Verify deploy public key exists on the control machine
-  ansible.builtin.stat:
-    path: "{{ gitlab_service_deploy_ssh_pubkey_path }}"
-  delegate_to: localhost
-  become: false
-  register: gitlab_service_deploy_ssh_pubkey_stat
-  when: ansible_connection != 'local'
-
-- name: Fail with guidance if the deploy public key is missing
-  ansible.builtin.fail:
-    msg: >-
-      Deploy public key not found at "{{ gitlab_service_deploy_ssh_pubkey_path }}"
-      on the control machine. Set gitlab_service_deploy_ssh_pubkey_file to the
-      correct path, or generate a key with: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519
-  when:
-    - ansible_connection != 'local'
-    - not gitlab_service_deploy_ssh_pubkey_stat.stat.exists
-
-- name: Authorize deploy key for service user
-  ansible.posix.authorized_key:
-    user: "{{ gitlab_service_user }}"
-    state: present
-    key: "{{ lookup('file', gitlab_service_deploy_ssh_pubkey_path) }}"
-  when: ansible_connection != 'local'
+- name: Remove service user SSH authorization directory
+  ansible.builtin.file:
+    path: "/home/{{ gitlab_service_user }}/.ssh"
+    state: absent
