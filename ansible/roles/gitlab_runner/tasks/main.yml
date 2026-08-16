@@ -1,0 +1,25 @@
+---
+- name: Debug Message
+  ansible.builtin.debug:
+    msg: "Start installation of Gitlab Runner"
+
+- name: Create and configure service user
+  become: true
+  block:
+    - name: Include service user tasks
+      ansible.builtin.include_tasks: user.yml
+
+- name: Build and transfer GitLab Runner image
+  become: true
+  block:
+    - name: Include image build tasks
+      ansible.builtin.include_tasks: image_build.yml
+
+- name: Register GitLab Runner
+  ansible.builtin.include_tasks: register.yml
+  when: gitlab_runner_token | length > 0
+
+- name: Deploy GitLab Runner service
+  ansible.builtin.include_tasks: service.yml
+  when: gitlab_runner_token | length > 0
+...

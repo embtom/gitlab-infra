@@ -1,0 +1,18 @@
+[Unit]
+Wants=podman.socket
+After=podman.socket
+
+[Container]
+Image={{ gitlab_runner_image }}
+ContainerName={{ gitlab_runner_service_name }}
+Network=host
+Volume={{ gitlab_runner_config_dir }}:/etc/gitlab-runner
+Volume={{ gitlab_runner_builds_dir }}:/builds
+Volume=/run/user/{{ gitlab_runner_user_uid }}/podman/podman.sock:/run/user/{{ gitlab_runner_user_uid
+}}/podman/podman.sock
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

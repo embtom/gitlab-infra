@@ -12,6 +12,8 @@
   roles:
     - role: gitlab_service
       tags: [service]
+    - role: gitlab_runner
+      tags: [runner]
     - role: gitlab_user_provision
       tags: [provision_user]
       when: gitlab_service_provision_user_name is defined

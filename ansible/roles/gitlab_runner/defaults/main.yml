@@ -1,0 +1,27 @@
+---
+gitlab_runner_user: gitlab-runner
+gitlab_runner_version: "19.2.2"
+gitlab_runner_image: "localhost/gitlab-runner:{{ gitlab_runner_version }}"
+gitlab_runner_podman_build_extra_args: >-
+  --build-arg GITLAB_RUNNER_VERSION={{ gitlab_runner_version }}
+
+gitlab_runner_container_method: direct-build
+gitlab_runner_force_rebuild: false
+gitlab_runner_job_image: "localhost/gitlab-runner-image:latest"
+gitlab_runner_gitlab_url: "http://jupiter:8081"
+gitlab_runner_token: "glrt-t1bIlJGX7uOmD14D_c58Em86MQp0OjEKdTozCw.01.121xmjwfn"
+gitlab_runner_name: "{{ ansible_facts['fqdn'] | default(ansible_facts['hostname'], true) }}"
+gitlab_runner_service_name: gitlab-runner
+gitlab_runner_config_dir: "/var/lib/gitlab-runner/config"
+gitlab_runner_builds_dir: "/var/lib/gitlab-runner/builds"
+gitlab_runner_podman_socket: >-
+  unix:///run/user/{{ gitlab_runner_user_uid }}/podman/podman.sock
+gitlab_runner_images:
+  - name: "{{ gitlab_runner_image }}"
+    context: containers/gitlab-runner
+    containerfile: Containerfile
+    build_extra_args: "{{ gitlab_runner_podman_build_extra_args }}"
+  - name: "{{ gitlab_runner_job_image }}"
+    context: containers/gitlab-runner-image
+    containerfile: Containerfile.runner
+    build_extra_args: ""
