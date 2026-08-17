@@ -9,7 +9,7 @@ gitlab_runner_container_method: direct-build
 gitlab_runner_force_rebuild: false
 gitlab_runner_job_image: "localhost/gitlab-runner-image:latest"
 gitlab_runner_gitlab_url: "http://jupiter:8081"
-gitlab_runner_token: "glrt-t1bIlJGX7uOmD14D_c58Em86MQp0OjEKdTozCw.01.121xmjwfn"
+gitlab_runner_token: ""
 gitlab_runner_name: "{{ ansible_facts['fqdn'] | default(ansible_facts['hostname'], true) }}"
 gitlab_runner_service_name: gitlab-runner
 gitlab_runner_config_dir: "/var/lib/gitlab-runner/config"

@@ -3,6 +3,9 @@
   ansible.builtin.debug:
     msg: "Start installation of Gitlab Runner"
 
+- name: Check if GitLab Runner is registered
+  ansible.builtin.include_tasks: is_registered.yml
+
 - name: Create and configure service user
   become: true
   block:
@@ -17,9 +20,7 @@
 
 - name: Register GitLab Runner
   ansible.builtin.include_tasks: register.yml
-  when: gitlab_runner_token | length > 0
 
 - name: Deploy GitLab Runner service
   ansible.builtin.include_tasks: service.yml
-  when: gitlab_runner_token | length > 0
 ...
