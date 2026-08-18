@@ -20,3 +20,65 @@
   delay: 20
   until: gitlab_service_check.rc == 0
   changed_when: false
+
+- name: Wait until GitLab application settings are available
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_user_uid }}"
+  ansible.builtin.command:
+    argv:
+      - podman
+      - exec
+      - "{{ gitlab_service_name }}"
+      - gitlab-rails
+      - runner
+      - "ApplicationSetting.current; puts 'ready'"
+  register: gitlab_service_application_settings_check
+  retries: 30
+  delay: 20
+  until: gitlab_service_application_settings_check.rc == 0
+  changed_when: false
+
+- name: Disable GitLab signup
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_user_uid }}"
+  ansible.builtin.command:
+    argv:
+      - podman
+      - exec
+      - "{{ gitlab_service_name }}"
+      - gitlab-rails
+      - runner
+      - '::Gitlab::CurrentSettings.update!(signup_enabled: false)'
+  changed_when: false
+
+# - name: Configure Web IDE single-origin fallback
+#   become: true
+#   become_user: "{{ gitlab_service_user }}"
+#   environment:
+#     XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_user_uid }}"
+#     GITLAB_WEB_IDE_SINGLE_ORIGIN_FALLBACK_ENABLED: >-
+#       {{ gitlab_service_web_ide_single_origin_fallback_enabled | string | lower }}
+#   ansible.builtin.command:
+#     argv:
+#       - podman
+#       - exec
+#       - -e
+#       - GITLAB_WEB_IDE_SINGLE_ORIGIN_FALLBACK_ENABLED
+#       - "{{ gitlab_service_name }}"
+#       - gitlab-rails
+#       - runner
+#       - >-
+#         enabled = ENV.fetch('GITLAB_WEB_IDE_SINGLE_ORIGIN_FALLBACK_ENABLED') == 'true';
+#         settings = ApplicationSetting.current;
+#         if settings.vscode_extension_marketplace_single_origin_fallback_enabled != enabled;
+#           settings.update!(vscode_extension_marketplace_single_origin_fallback_enabled: enabled);
+#           puts 'changed';
+#         else;
+#           puts 'unchanged';
+#         end
+#   register: gitlab_service_web_ide_fallback
+#   changed_when: gitlab_service_web_ide_fallback.stdout | trim == 'changed'

@@ -1,0 +1,24 @@
+---
+- name: Get Git top-level directory
+  ansible.builtin.command: git rev-parse --show-toplevel
+  register: gitlab_runner_git_topdir
+  changed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Build and ship runner images
+  ansible.builtin.include_tasks: build_and_ship_image.yml
+  loop: "{{ gitlab_runner_images }}"
+  loop_control:
+    loop_var: gitlab_runner_image_spec
+    label: "{{ gitlab_runner_image_spec.name }}"
+  vars:
+    container_image_name: "{{ gitlab_runner_image_spec.name }}"
+    container_image_context: >-
+      {{ gitlab_runner_git_topdir.stdout | trim }}/{{ gitlab_runner_image_spec.context }}
+    container_image_containerfile: "{{ gitlab_runner_image_spec.containerfile }}"
+    container_image_build_extra_args: "{{ gitlab_runner_image_spec.build_extra_args }}"
+    container_image_archive: >-
+      /tmp/{{ gitlab_runner_image_spec.name | replace('/', '_') | replace(':', '_') }}.tar
+    container_image_target_user: "{{ gitlab_runner_user }}"
+    container_image_force_rebuild: "{{ gitlab_runner_force_rebuild }}"

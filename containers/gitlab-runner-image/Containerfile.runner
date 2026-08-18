@@ -1,0 +1,113 @@
+FROM debian:trixie
+
+ARG VERSION=dev
+ARG DEBIAN_FRONTEND=noninteractive
+ARG RELEASE_CLI_VERSION=0.24.0
+ARG RELEASE_CLI_SHA256=f979ef752c648b2804051b052a3a7624e06f6fd278b077905b3a51b6e86f0221
+
+LABEL version=$VERSION
+LABEL maintainer="t.willetal@gmail.com"
+
+RUN set -eux; \
+  echo "$VERSION" > /etc/image-version; \
+  echo "release-cli=$RELEASE_CLI_VERSION" >> /etc/image-version
+
+ENV _CONTAINERS_USERNS_CONFIGURED="" \
+  BUILDAH_ISOLATION=chroot \
+  container=oci \
+  PIP_ROOT_USER_ACTION=ignore \
+  PIP_BREAK_SYSTEM_PACKAGES=1 \
+  POETRY_VIRTUALENVS_CREATE=false \
+  PATH=/root/.local/bin:$PATH \
+  LANG=en_US.UTF-8 \
+  LC_ALL=en_US.UTF-8
+
+# Base utilities and Python
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+  build-essential \
+  ca-certificates \
+  curl \
+  git \
+  gnupg \
+  gettext \
+  jq \
+  locales \
+  lsb-release \
+  nano \
+  python3 \
+  python3-pip \
+  python3-venv \
+  sed \
+  openssl \
+  wget \
+  yq \
+  zstd && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/* && \
+  sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+  locale-gen
+
+# Install the Podman toolchain from Debian Trixie.
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+  podman \
+  buildah \
+  slirp4netns \
+  fuse-overlayfs \
+  passt \
+  qemu-user-static \
+  qemu-user-binfmt && \
+  apt-get autoremove -y && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
+
+# Install Python tools in user space (avoids uninstall-no-record-file errors)
+RUN python3 -m pip install --upgrade --no-cache-dir --user \
+  pip \
+  changelog2version \
+  semver \
+  dunamai \
+  podman-compose \
+  twine \
+  poetry
+
+# Add containers config
+COPY config/containers.conf /etc/containers/containers.conf
+COPY config/storage.conf /etc/containers/storage.conf
+
+# Prepare container storage structure
+RUN mkdir -p /usr/lib/containers/storage/overlay-images \
+  /usr/lib/containers/storage/overlay-layers \
+  /var/lib/shared/overlay-images \
+  /var/lib/shared/overlay-layers \
+  /var/lib/shared/vfs-images \
+  /var/lib/shared/vfs-layers && \
+  touch /usr/lib/containers/storage/overlay-images/images.lock \
+  /usr/lib/containers/storage/overlay-layers/layers.lock \
+  /var/lib/shared/overlay-images/images.lock \
+  /var/lib/shared/overlay-layers/layers.lock \
+  /var/lib/shared/vfs-images/images.lock \
+  /var/lib/shared/vfs-layers/layers.lock
+
+VOLUME /var/lib/containers
+
+# Install custom certs when present.
+COPY crt/ /usr/local/share/ca-certificates/
+RUN update-ca-certificates
+
+ENV REQUESTS_CA_BUNDLE=/usr/lib/ssl/cert.pem
+ENV SSL_CERT_FILE=/usr/lib/ssl/cert.pem
+
+# Install GitLab release-cli
+RUN set -eux; \
+  curl -fsSL https://gitlab.com/api/v4/projects/16573099/packages/generic/release-cli/v${RELEASE_CLI_VERSION}/release-cli-linux-amd64 \
+  -o /usr/local/bin/release-cli && \
+  echo "${RELEASE_CLI_SHA256}  /usr/local/bin/release-cli" > /tmp/release-cli.sha256 && \
+  sha256sum -c /tmp/release-cli.sha256 && \
+  chmod +x /usr/local/bin/release-cli && \
+  rm /tmp/release-cli.sha256
+
+RUN echo "Build is using version: ${VERSION}"
+
+CMD ["/bin/bash"]

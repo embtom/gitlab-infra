@@ -97,6 +97,10 @@ def build_extra_vars(args: argparse.Namespace) -> dict[str, object]:
 
     is_local = args.host in {"localhost", "127.0.0.1", "::1"}
 
+    become_password = os.environ.get("GITLAB_INFRA_BECOME_PASSWORD")
+    if become_password:
+        extra_vars["ansible_become_password"] = become_password
+
     if not is_local:
         extra_vars["ansible_host"] = args.host
 
@@ -129,12 +133,16 @@ def resolve_tags(args: argparse.Namespace) -> list[str]:
 
 
 def build_command(tags: list[str], limit: str, vars_file: Path) -> list[str]:
-    return [
+    command = [
         "ansible-playbook",
         "--inventory",
         "inventories/hosts.yml",
         "playbooks/gitlab_setup.yml",
-        "--ask-become-pass",
+        *(
+            []
+            if os.environ.get("GITLAB_INFRA_BECOME_PASSWORD")
+            else ["--ask-become-pass"]
+        ),
         "--limit",
         limit,
         "--tags",
@@ -142,6 +150,8 @@ def build_command(tags: list[str], limit: str, vars_file: Path) -> list[str]:
         "--extra-vars",
         f"@{vars_file}",
     ]
+
+    return command
 
 
 def main() -> int:

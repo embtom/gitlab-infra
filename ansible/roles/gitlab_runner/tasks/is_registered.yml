@@ -1,0 +1,23 @@
+- name: Check whether GitLab Runner is registered
+  ansible.builtin.stat:
+    path: "{{ gitlab_runner_config_dir }}/config.toml"
+  register: gitlab_runner_config
+  become: true
+
+- name: Prompt for GitLab Runner token
+  ansible.builtin.pause:
+    prompt: "GitLab Runner token"
+    echo: false
+  register: gitlab_runner_token_prompt
+  when:
+    - not gitlab_runner_config.stat.exists
+    - gitlab_runner_token | default('') | length == 0
+  no_log: true
+
+- name: Set GitLab Runner token from prompt
+  ansible.builtin.set_fact:
+    gitlab_runner_token: "{{ gitlab_runner_token_prompt.user_input }}"
+  when:
+    - not gitlab_runner_config.stat.exists
+    - gitlab_runner_token | default('') | length == 0
+  no_log: true

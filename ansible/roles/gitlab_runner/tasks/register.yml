@@ -1,0 +1,90 @@
+---
+- name: Create GitLab Runner configuration directory
+  ansible.builtin.file:
+    path: "{{ gitlab_runner_config_dir }}"
+    state: directory
+    owner: "{{ gitlab_runner_user }}"
+    group: "{{ gitlab_runner_user }}"
+    mode: "0700"
+  become: true
+
+- name: Create GitLab Runner builds directory
+  ansible.builtin.file:
+    path: "{{ gitlab_runner_builds_dir }}"
+    state: directory
+    owner: "{{ gitlab_runner_user }}"
+    group: "{{ gitlab_runner_user }}"
+    mode: "0750"
+  become: true
+
+- name: Check whether GitLab Runner is already registered
+  ansible.builtin.stat:
+    path: "{{ gitlab_runner_config_dir }}/config.toml"
+  register: gitlab_runner_config
+  become: true
+
+- name: Validate GitLab Runner registration settings
+  ansible.builtin.assert:
+    that:
+      - gitlab_runner_gitlab_url | length > 0
+      - gitlab_runner_token | length > 0
+    fail_msg: "A GitLab Runner token is required for first-time registration."
+  no_log: true
+  when: not gitlab_runner_config.stat.exists
+
+- name: Register GitLab Runner non-interactively
+  ansible.builtin.command:
+    argv:
+      - podman
+      - run
+      - --rm
+      - --network
+      - host
+      - --volume
+      - "{{ gitlab_runner_config_dir }}:/etc/gitlab-runner"
+      - --entrypoint
+      - /usr/local/bin/gitlab-runner
+      - "{{ gitlab_runner_image }}"
+      - register
+      - --non-interactive
+      - --url
+      - "{{ gitlab_runner_gitlab_url }}"
+      - --token
+      - "{{ gitlab_runner_token }}"
+      - --name
+      - "{{ gitlab_runner_name }}"
+      - --executor
+      - "docker"
+      - --builds-dir
+      - "/builds"
+      - --docker-host
+      - "{{ gitlab_runner_podman_socket }}"
+      - --docker-image
+      - "{{ gitlab_runner_job_image }}"
+      - --docker-pull-policy
+      - "{{ gitlab_runner_job_image_pull_policy | first }}"
+      - --docker-network
+      - "{{ gitlab_runner_job_network }}"
+      - --docker-privileged
+  changed_when: true
+  become: true
+  become_user: "{{ gitlab_runner_user }}"
+  no_log: true
+  when: not gitlab_runner_config.stat.exists
+
+- name: Configure GitLab Runner Docker executor
+  ansible.builtin.lineinfile:
+    path: "{{ gitlab_runner_config_dir }}/config.toml"
+    regexp: "^\\s*{{ item.key }}\\s*="
+    line: "    {{ item.key }} = {{ item.value }}"
+    insertafter: '^  \[runners\.docker\]$'
+    owner: "{{ gitlab_runner_user }}"
+    group: "{{ gitlab_runner_user }}"
+    mode: "0600"
+  become: true
+  notify: Restart GitLab Runner service
+  loop:
+    - key: pull_policy
+      value: "{{ gitlab_runner_job_image_pull_policy | to_json }}"
+    - key: network_mode
+      value: '"{{ gitlab_runner_job_network }}"'

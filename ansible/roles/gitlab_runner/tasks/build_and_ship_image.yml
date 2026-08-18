@@ -1,0 +1,53 @@
+---
+- name: Remove existing local image
+  containers.podman.podman_image:
+    name: "{{ container_image_name }}"
+    state: absent
+    force: true
+  when: container_image_force_rebuild | bool
+  delegate_to: localhost
+  become: false
+
+- name: Build image locally
+  containers.podman.podman_image:
+    name: "{{ container_image_name }}"
+    tag: latest
+    path: "{{ container_image_context }}"
+    state: present
+    build:
+      file: "{{ container_image_containerfile }}"
+      extra_args: "{{ container_image_build_extra_args }}"
+  delegate_to: localhost
+  become: false
+
+- name: Export locally built image
+  containers.podman.podman_save:
+    image: "{{ container_image_name }}"
+    dest: "{{ container_image_archive }}"
+  delegate_to: localhost
+  become: false
+
+- name: Copy image archive to remote host
+  ansible.builtin.copy:
+    src: "{{ container_image_archive }}"
+    dest: "{{ container_image_archive }}"
+    mode: "0644"
+
+- name: Load image from tar archive
+  containers.podman.podman_load:
+    input: "{{ container_image_archive }}"
+  become: true
+  become_user: "{{ container_image_target_user }}"
+
+- name: Remove remote image archive
+  ansible.builtin.file:
+    path: "{{ container_image_archive }}"
+    state: absent
+  become: true
+
+- name: Remove local image archive
+  ansible.builtin.file:
+    path: "{{ container_image_archive }}"
+    state: absent
+  delegate_to: localhost
+  become: false

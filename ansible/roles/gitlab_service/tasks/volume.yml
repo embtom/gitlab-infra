@@ -1,44 +1,47 @@
 ---
-- name: Validate GitLab data directory before recreating data
+- name: Validate GitLab storage directories before recreating data
   when: gitlab_service_volume_recreate | default(false) | bool
   become: true
   ansible.builtin.assert:
     that:
-      - gitlab_service_data_dir is match('^/.+')
-      - gitlab_service_data_dir != '/'
+      - item is match('^/.+')
+      - item != '/'
     fail_msg: >-
-      gitlab_service_data_dir must be a non-root absolute path; got
-      '{{ gitlab_service_data_dir }}'.
+      GitLab storage directories must be non-root absolute paths; got '{{ item }}'.
+  loop:
+    - "{{ gitlab_service_config_dir }}"
+    - "{{ gitlab_service_logs_dir }}"
+    - "{{ gitlab_service_data_dir }}"
 
-- name: Remove GitLab data subdirectories when recreating data
+- name: Remove GitLab storage directories when recreating data
   when: gitlab_service_volume_recreate | default(false) | bool
   become: true
   ansible.builtin.file:
-    path: "{{ gitlab_service_data_dir }}/{{ item }}"
+    path: "{{ item }}"
     state: absent
   loop:
-    - config
-    - logs
-    - data
+    - "{{ gitlab_service_config_dir }}"
+    - "{{ gitlab_service_logs_dir }}"
+    - "{{ gitlab_service_data_dir }}"
 
-- name: Create GitLab data directories
+- name: Create GitLab storage directories
   become: true
   ansible.builtin.file:
-    path: "{{ gitlab_service_data_dir }}/{{ item }}"
+    path: "{{ item }}"
     state: directory
     owner: "{{ gitlab_service_user }}"
     group: "{{ gitlab_service_user }}"
     mode: "0750"
   loop:
-    - config
-    - logs
-    - data
+    - "{{ gitlab_service_config_dir }}"
+    - "{{ gitlab_service_logs_dir }}"
+    - "{{ gitlab_service_data_dir }}"
 
 # The OpenSSH daemon bundled in the image isn't exposed as a Chef attribute
 - name: Create OpenSSH "down" marker file
   become: true
   ansible.builtin.file:
-    path: "{{ gitlab_service_data_dir }}/sshd-down"
+    path: "{{ gitlab_service_config_dir }}/sshd-down"
     state: touch
     owner: "{{ gitlab_service_user }}"
     group: "{{ gitlab_service_user }}"

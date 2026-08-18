@@ -1,0 +1,53 @@
+---
+- name: Create service user
+  ansible.builtin.user:
+    name: "{{ gitlab_runner_user }}"
+    comment: "Gitlab service user"
+    shell: /bin/bash
+    create_home: true
+    password: "{{ gitlab_runner_user_password | default(omit) }}"
+    update_password: "{{ 'always' if gitlab_runner_user_password | default(false) else omit }}"
+    state: present
+
+- name: Get service user UID
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ gitlab_runner_user }}"
+  register: gitlab_runner_user_info
+
+- name: Set service user UID fact
+  ansible.builtin.set_fact:
+    gitlab_runner_user_uid: >-
+      {{
+        gitlab_runner_user_info
+        .ansible_facts
+        .getent_passwd[gitlab_runner_user][1]
+      }}
+
+- name: Check if lingering is enabled
+  ansible.builtin.command: loginctl show-user {{ gitlab_runner_user }} -p Linger
+  register: gitlab_runner_linger_check
+  failed_when: false
+  changed_when: false
+
+- name: Enable lingering if needed
+  ansible.builtin.command:
+    cmd: loginctl enable-linger {{ gitlab_runner_user }}
+  changed_when: "'Linger=yes' not in gitlab_runner_linger_check.stdout"
+  when: "'Linger=yes' not in gitlab_runner_linger_check.stdout"
+
+- name: Ensure user systemd instance is running
+  ansible.builtin.systemd:
+    name: "user@{{ gitlab_runner_user_uid }}.service"
+    state: started
+    scope: system
+
+- name: Wait for user bus socket to be available
+  ansible.builtin.wait_for:
+    path: "/run/user/{{ gitlab_runner_user_uid }}/bus"
+    timeout: 30
+
+- name: Remove service user SSH authorization directory
+  ansible.builtin.file:
+    path: "/home/{{ gitlab_runner_user }}/.ssh"
+    state: absent

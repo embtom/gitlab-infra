@@ -1,0 +1,26 @@
+FROM debian:trixie
+
+ENV DEBIAN_FRONTEND=noninteractive
+ARG GITLAB_RUNNER_VERSION=19.2.2
+
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends \
+  ca-certificates \
+  curl \
+  git \
+  bash \
+  tini && \
+  rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL \
+  "https://gitlab-runner-downloads.s3.amazonaws.com/v${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64" \
+  -o /usr/local/bin/gitlab-runner && \
+  chmod +x /usr/local/bin/gitlab-runner
+
+RUN mkdir -p /etc/gitlab-runner /builds /cache /opt/gitlab-runner
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+CMD ["/usr/local/bin/gitlab-runner", "run", \
+  "--working-directory", "/opt/gitlab-runner", \
+  "--config", "/etc/gitlab-runner/config.toml"]

@@ -1,0 +1,19 @@
+---
+- name: Reload GitLab Runner user systemd daemon
+  become: true
+  become_user: "{{ gitlab_runner_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_runner_user_uid }}"
+  ansible.builtin.systemd:
+    scope: user
+    daemon_reload: true
+
+- name: Restart GitLab Runner service
+  become: true
+  become_user: "{{ gitlab_runner_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_runner_user_uid }}"
+  ansible.builtin.systemd:
+    name: "{{ gitlab_runner_service_name }}.service"
+    scope: user
+    state: restarted

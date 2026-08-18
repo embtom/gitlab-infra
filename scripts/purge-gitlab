@@ -10,7 +10,9 @@ fi
 
 gitlab_service_user="${1:-gitlab}"
 SERVICE_NAME="${2:-gitlab.service}"
-GITLAB_DATA_DIR="${3:-/var/lib/gitlab}"
+GITLAB_CONFIG_DIR="${3:-/var/lib/gitlab/config}"
+GITLAB_LOGS_DIR="${4:-/var/lib/gitlab/logs}"
+GITLAB_DATA_DIR="${5:-/var/lib/gitlab/data}"
 
 #
 # Verify that the user exists.
@@ -25,7 +27,7 @@ fi
 #
 
 read -rp \
-  "==> This will permanently delete user '$gitlab_service_user', '$GITLAB_DATA_DIR', and ALL associated Podman resources. Continue? [y/N] " \
+  "==> This will permanently delete user '$gitlab_service_user', GitLab storage directories, and ALL associated Podman resources. Continue? [y/N] " \
   confirm
 
 case "${confirm,,}" in
@@ -77,15 +79,17 @@ echo "==> Removing user '$gitlab_service_user'"
 userdel -r "$gitlab_service_user"
 
 echo
-echo "==> Removing GitLab data directory '$GITLAB_DATA_DIR'"
+for gitlab_storage_dir in "$GITLAB_CONFIG_DIR" "$GITLAB_LOGS_DIR" "$GITLAB_DATA_DIR"; do
+  echo "==> Removing GitLab storage directory '$gitlab_storage_dir'"
 
-resolved_data_dir="$(realpath -m -- "$GITLAB_DATA_DIR")"
-if [[ -z "$resolved_data_dir" || "$resolved_data_dir" == "/" ]]; then
-  echo "ERROR: Refusing to remove unsafe data directory: '$GITLAB_DATA_DIR'" >&2
-  exit 1
-fi
+  resolved_storage_dir="$(realpath -m -- "$gitlab_storage_dir")"
+  if [[ -z "$resolved_storage_dir" || "$resolved_storage_dir" == "/" ]]; then
+    echo "ERROR: Refusing to remove unsafe storage directory: '$gitlab_storage_dir'" >&2
+    exit 1
+  fi
 
-rm -rf -- "$resolved_data_dir"
+  rm -rf -- "$resolved_storage_dir"
+done
 
 echo
 echo "==> Cleanup complete."
