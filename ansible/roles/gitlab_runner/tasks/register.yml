@@ -61,9 +61,30 @@
       - "{{ gitlab_runner_podman_socket }}"
       - --docker-image
       - "{{ gitlab_runner_job_image }}"
+      - --docker-pull-policy
+      - "{{ gitlab_runner_job_image_pull_policy | first }}"
+      - --docker-network
+      - "{{ gitlab_runner_job_network }}"
       - --docker-privileged
   changed_when: true
   become: true
   become_user: "{{ gitlab_runner_user }}"
   no_log: true
   when: not gitlab_runner_config.stat.exists
+
+- name: Configure GitLab Runner Docker executor
+  ansible.builtin.lineinfile:
+    path: "{{ gitlab_runner_config_dir }}/config.toml"
+    regexp: "^\\s*{{ item.key }}\\s*="
+    line: "    {{ item.key }} = {{ item.value }}"
+    insertafter: '^  \[runners\.docker\]$'
+    owner: "{{ gitlab_runner_user }}"
+    group: "{{ gitlab_runner_user }}"
+    mode: "0600"
+  become: true
+  notify: Restart GitLab Runner service
+  loop:
+    - key: pull_policy
+      value: "{{ gitlab_runner_job_image_pull_policy | to_json }}"
+    - key: network_mode
+      value: '"{{ gitlab_runner_job_network }}"'

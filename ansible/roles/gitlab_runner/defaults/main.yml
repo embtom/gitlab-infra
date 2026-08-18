@@ -8,6 +8,9 @@ gitlab_runner_podman_build_extra_args: >-
 gitlab_runner_container_method: direct-build
 gitlab_runner_force_rebuild: false
 gitlab_runner_job_image: "localhost/gitlab-runner-image:latest"
+gitlab_runner_job_image_pull_policy:
+  - if-not-present
+gitlab_runner_job_network: host
 gitlab_runner_gitlab_url: "http://jupiter:8081"
 gitlab_runner_token: ""
 gitlab_runner_name: "{{ ansible_facts['fqdn'] | default(ansible_facts['hostname'], true) }}"
