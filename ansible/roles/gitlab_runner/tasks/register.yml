@@ -17,6 +17,15 @@
     mode: "0750"
   become: true
 
+- name: Configure Podman registry policy for job containers
+  ansible.builtin.template:
+    src: registries.conf.j2
+    dest: "{{ gitlab_runner_registry_config_path }}"
+    owner: "{{ gitlab_runner_user }}"
+    group: "{{ gitlab_runner_user }}"
+    mode: "0600"
+  become: true
+
 - name: Check whether GitLab Runner is already registered
   ansible.builtin.stat:
     path: "{{ gitlab_runner_config_dir }}/config.toml"
@@ -65,6 +74,10 @@
       - "{{ gitlab_runner_job_image_pull_policy | first }}"
       - --docker-network
       - "{{ gitlab_runner_job_network }}"
+      - --docker-volumes
+      - /cache
+      - --docker-volumes
+      - "{{ gitlab_runner_registry_config_path }}:/etc/containers/registries.conf.d/gitlab.conf:ro"
       - --docker-privileged
   changed_when: true
   become: true
@@ -88,3 +101,10 @@
       value: "{{ gitlab_runner_job_image_pull_policy | to_json }}"
     - key: network_mode
       value: '"{{ gitlab_runner_job_network }}"'
+    - key: volumes
+      value: >-
+        {{ [
+          '/cache',
+          gitlab_runner_registry_config_path
+          ~ ':/etc/containers/registries.conf.d/gitlab.conf:ro'
+        ] | to_json }}

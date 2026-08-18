@@ -12,6 +12,15 @@ gitlab_runner_job_image_pull_policy:
   - if-not-present
 gitlab_runner_job_network: host
 gitlab_runner_gitlab_url: "http://jupiter:8081"
+
+# Insecure registry settings for GitLab Runner
+gitlab_runner_registry_host: "{{ gitlab_runner_gitlab_url | urlsplit('hostname') }}"
+gitlab_runner_registry_port: 5050
+gitlab_runner_insecure_registry: >-
+  {{ gitlab_runner_registry_host }}:{{ gitlab_runner_registry_port }}
+gitlab_runner_registry_config_path: "{{ gitlab_runner_config_dir }}/registries.conf"
+# Insecure registry settings for GitLab Runner
+
 gitlab_runner_token: ""
 gitlab_runner_name: "{{ ansible_facts['fqdn'] | default(ansible_facts['hostname'], true) }}"
 gitlab_runner_service_name: gitlab-runner
