@@ -6,3 +6,5 @@
 - name: Create root CA
   ansible.builtin.include_tasks: root-ca.yml
 
+- name: Create intermediate CA
+  ansible.builtin.include_tasks: intermediate-ca.yml
