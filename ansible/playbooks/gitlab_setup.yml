@@ -10,6 +10,8 @@
       tags: [always]
 
   roles:
+    - role : pki
+      tags: [pki]
     - role: gitlab_service
       tags: [service]
     - role: gitlab_runner

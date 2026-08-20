@@ -1,0 +1,8 @@
+---
+- name: Debug Message
+  ansible.builtin.debug:
+    msg: "Start installation of PKI"
+
+- name: Create root CA
+  ansible.builtin.include_tasks: root-ca.yml
+

@@ -133,6 +133,8 @@ def resolve_tags(args: argparse.Namespace) -> list[str]:
 
 
 def build_command(tags: list[str], limit: str, vars_file: Path) -> list[str]:
+    requires_become = set(tags) != {"pki"}
+
     command = [
         "ansible-playbook",
         "--inventory",
@@ -140,7 +142,7 @@ def build_command(tags: list[str], limit: str, vars_file: Path) -> list[str]:
         "playbooks/gitlab_setup.yml",
         *(
             []
-            if os.environ.get("GITLAB_INFRA_BECOME_PASSWORD")
+            if not requires_become or os.environ.get("GITLAB_INFRA_BECOME_PASSWORD")
             else ["--ask-become-pass"]
         ),
         "--limit",
