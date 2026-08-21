@@ -2,7 +2,11 @@
 ## To change settings, edit the template and re-run the deploy playbook;
 ## GitLab picks this up on its next `gitlab-ctl reconfigure` (container restart).
 
-external_url 'http://{{ gitlab_service_external_host }}:{{ gitlab_service_web_port }}/'
+external_url 'https://{{ gitlab_service_external_host }}:{{ gitlab_service_web_port }}/'
+gitlab_rails['nginx']['ssl_certificate'] = '{{ gitlab_service_tls_container_certificate }}'
+gitlab_rails['nginx']['ssl_certificate_key'] = '{{ gitlab_service_tls_container_private_key }}'
+# We supply our own PKI-issued cert/key, so don't let Chef manage the SSL dir.
+letsencrypt['enable'] = false
 
 gitlab_rails['env'] = {
   'GITLAB_LOG_LEVEL' => '{{ gitlab_service_log_level }}'
@@ -23,9 +27,11 @@ logging['logrotate_compress'] = 'compress'
 
 # Container registry settings
 {% if gitlab_service_registry_enabled | bool %}
-registry_external_url 'http://{{ gitlab_service_external_host }}:{{ gitlab_service_registry_port }}'
+registry_external_url 'https://{{ gitlab_service_external_host }}:{{ gitlab_service_registry_port }}'
 gitlab_rails['registry_enabled'] = true
 registry['enable'] = true
+registry['nginx']['ssl_certificate'] = '{{ gitlab_service_tls_container_certificate }}'
+registry['nginx']['ssl_certificate_key'] = '{{ gitlab_service_tls_container_private_key }}'
 {% else %}
 gitlab_rails['registry_enabled'] = false
 registry['enable'] = false

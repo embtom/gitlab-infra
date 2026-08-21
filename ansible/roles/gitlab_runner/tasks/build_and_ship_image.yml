@@ -9,14 +9,13 @@
   become: false
 
 - name: Build image locally
-  containers.podman.podman_image:
-    name: "{{ container_image_name }}"
-    tag: latest
-    path: "{{ container_image_context }}"
-    state: present
-    build:
-      file: "{{ container_image_containerfile }}"
-      extra_args: "{{ container_image_build_extra_args }}"
+  ansible.builtin.command:
+    cmd: >-
+      podman build --tag {{ container_image_name | quote }}
+      --file {{ container_image_containerfile | quote }}
+      {{ container_image_build_extra_args }}
+      {{ container_image_context | quote }}
+  changed_when: true
   delegate_to: localhost
   become: false
 

@@ -75,6 +75,8 @@ RUN python3 -m pip install --upgrade --no-cache-dir --user \
 # Add containers config
 COPY config/containers.conf /etc/containers/containers.conf
 COPY config/storage.conf /etc/containers/storage.conf
+COPY scripts/install-root-ca.sh /usr/local/bin/install-root-ca
+RUN chmod 0755 /usr/local/bin/install-root-ca
 
 # Prepare container storage structure
 RUN mkdir -p /usr/lib/containers/storage/overlay-images \
@@ -110,4 +112,5 @@ RUN set -eux; \
 
 RUN echo "Build is using version: ${VERSION}"
 
+ENTRYPOINT ["/usr/local/bin/install-root-ca"]
 CMD ["/bin/bash"]
