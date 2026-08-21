@@ -8,3 +8,9 @@
 
 - name: Create intermediate CA
   ansible.builtin.include_tasks: intermediate-ca.yml
+
+- name: Create GitLab TLS certificate
+  ansible.builtin.include_tasks: gitlab-certificate.yml
+
+- name: Verify PKI certificate chain
+  ansible.builtin.include_tasks: verify_chain.yml

@@ -3,6 +3,10 @@
   hosts: all
   become: false
 
+  vars:
+    gitlab_external_host: >-
+      {{ ansible_facts['fqdn'] | default(ansible_facts['hostname'], true) }}
+
   pre_tasks:
     - name: Show deployment target
       ansible.builtin.debug:
@@ -10,8 +14,8 @@
       tags: [always]
 
   roles:
-    - role : pki
-      tags: [pki]
+    - role: pki
+      tags: [pki, service]
     - role: gitlab_service
       tags: [service]
     - role: gitlab_runner

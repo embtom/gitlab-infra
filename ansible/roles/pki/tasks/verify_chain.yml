@@ -1,0 +1,45 @@
+---
+- name: Verify intermediate CA against root CA
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - verify
+      - -CAfile
+      - "{{ pki_root_ca_certificate }}"
+      - "{{ pki_intermediate_ca_certificate }}"
+  register: pki_intermediate_verify
+  changed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Verify server certificate against root and intermediate CA
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - verify
+      - -CAfile
+      - "{{ pki_root_ca_certificate }}"
+      - -untrusted
+      - "{{ pki_intermediate_ca_certificate }}"
+      - "{{ pki_gitlab_certificate }}"
+  register: pki_server_verify
+  changed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Show PKI verification result
+  ansible.builtin.debug:
+    msg:
+      - "Intermediate: {{ pki_intermediate_verify.stdout }}"
+      - "Server: {{ pki_server_verify.stdout }}"
+
+- name: Assert PKI certificate chain is valid
+  ansible.builtin.assert:
+    that:
+      - pki_intermediate_verify.rc == 0
+      - pki_server_verify.rc == 0
+    fail_msg: >-
+      PKI verification failed.
+      Intermediate: {{ pki_intermediate_verify.stderr | default('') }}
+      Server: {{ pki_server_verify.stderr | default('') }}
+    success_msg: "PKI certificate chain is valid."
