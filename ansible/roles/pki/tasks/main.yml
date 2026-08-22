@@ -1,0 +1,16 @@
+---
+- name: Debug Message
+  ansible.builtin.debug:
+    msg: "Start installation of PKI"
+
+- name: Create root CA
+  ansible.builtin.include_tasks: root-ca.yml
+
+- name: Create intermediate CA
+  ansible.builtin.include_tasks: intermediate-ca.yml
+
+- name: Create GitLab TLS certificate
+  ansible.builtin.include_tasks: gitlab-certificate.yml
+
+- name: Verify PKI certificate chain
+  ansible.builtin.include_tasks: verify_chain.yml

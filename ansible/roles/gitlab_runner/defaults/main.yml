@@ -11,12 +11,16 @@ gitlab_runner_job_image: "localhost/gitlab-runner-image:latest"
 gitlab_runner_job_image_pull_policy:
   - if-not-present
 gitlab_runner_job_network: host
-gitlab_runner_gitlab_url: "http://jupiter:8081"
+gitlab_runner_gitlab_url: "https://{{ gitlab_external_host }}:8081"
 gitlab_runner_token: ""
 gitlab_runner_name: "{{ ansible_facts['fqdn'] | default(ansible_facts['hostname'], true) }}"
 gitlab_runner_service_name: gitlab-runner
 gitlab_runner_config_dir: "/var/lib/gitlab-runner/config"
 gitlab_runner_builds_dir: "/var/lib/gitlab-runner/builds"
+gitlab_runner_ca_dir: "{{ gitlab_runner_config_dir }}/certs"
+gitlab_runner_ca_certificate: "{{ gitlab_runner_ca_dir }}/root-ca.crt"
+gitlab_runner_ca_container_certificate: /etc/gitlab-runner/certs/root-ca.crt
+gitlab_runner_job_ca_certificate: "{{ gitlab_runner_ca_container_certificate }}"
 gitlab_runner_podman_socket: >-
   unix:///run/user/{{ gitlab_runner_user_uid }}/podman/podman.sock
 gitlab_runner_images:

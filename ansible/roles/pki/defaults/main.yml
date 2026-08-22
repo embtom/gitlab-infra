@@ -1,0 +1,28 @@
+pki_root_ca_common_name: "embtom Infrastructure Root CA"
+
+pki_country: "DE"
+pki_state: "Bayern"
+pki_organization: "embtom"
+
+pki_controller_root_dir: >-
+  {{ lookup('ansible.builtin.env', 'HOME') }}/.local/share/gitlab-infra/pki
+pki_root_ca_key: "{{ pki_controller_root_dir }}/private/root-ca.key"
+pki_root_ca_csr: "{{ pki_controller_root_dir }}/csr/root-ca.csr"
+pki_root_ca_certificate: "{{ pki_controller_root_dir }}/certs/root-ca.crt"
+
+pki_intermediate_ca_common_name: "embtom GitLab Issuing CA"
+pki_intermediate_ca_dir: "{{ pki_controller_root_dir }}/intermediate"
+pki_intermediate_ca_key: "{{ pki_intermediate_ca_dir }}/private/intermediate-ca.key"
+pki_intermediate_ca_csr: "{{ pki_intermediate_ca_dir }}/csr/intermediate-ca.csr"
+pki_intermediate_ca_certificate: >-
+  {{ pki_intermediate_ca_dir }}/certs/intermediate-ca.crt
+
+pki_gitlab_common_name: "{{ gitlab_external_host }}"
+pki_gitlab_certificate_name: >-
+  {{ gitlab_external_host | regex_replace('[^A-Za-z0-9._-]', '_') }}-server
+pki_gitlab_private_key: >-
+  {{ pki_intermediate_ca_dir }}/private/{{ pki_gitlab_certificate_name }}.key
+pki_gitlab_csr: >-
+  {{ pki_intermediate_ca_dir }}/csr/{{ pki_gitlab_certificate_name }}.csr
+pki_gitlab_certificate: >-
+  {{ pki_intermediate_ca_dir }}/certs/{{ pki_gitlab_certificate_name }}.crt

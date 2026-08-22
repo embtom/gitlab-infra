@@ -46,6 +46,18 @@
       ]
     },
     {
+      "label": "ansible: setup PKI",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/deploy.py",
+      "args": [
+        "--host",
+        "${input:targetHost}",
+        "--tags",
+        "pki"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "ansible: deploy gitlab to host",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/deploy.py",

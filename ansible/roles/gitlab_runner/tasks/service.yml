@@ -10,7 +10,6 @@
     state: started
     enabled: true
 
-
 - name: Ensure Quadlet directory exists
   become: true
   become_user: "{{ gitlab_runner_user }}"
@@ -41,6 +40,6 @@
   ansible.builtin.systemd:
     name: "{{ gitlab_runner_service_name }}.service"
     scope: user
-    state: started
+    state: restarted
     enabled: true
 ...

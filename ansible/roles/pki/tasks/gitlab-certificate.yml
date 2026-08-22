@@ -1,0 +1,36 @@
+---
+- name: Create GitLab TLS private key
+  community.crypto.openssl_privatekey:
+    path: "{{ pki_gitlab_private_key }}"
+    type: RSA
+    size: 4096
+    mode: "0600"
+  delegate_to: localhost
+  become: false
+
+- name: Create GitLab TLS CSR
+  community.crypto.openssl_csr:
+    path: "{{ pki_gitlab_csr }}"
+    privatekey_path: "{{ pki_gitlab_private_key }}"
+    common_name: "{{ pki_gitlab_common_name }}"
+    subject_alt_name:
+      - "DNS:{{ pki_gitlab_common_name }}"
+    key_usage:
+      - digitalSignature
+      - keyEncipherment
+    extended_key_usage:
+      - serverAuth
+  delegate_to: localhost
+  become: false
+
+- name: Sign GitLab TLS certificate with intermediate CA
+  community.crypto.x509_certificate:
+    path: "{{ pki_gitlab_certificate }}"
+    csr_path: "{{ pki_gitlab_csr }}"
+    provider: ownca
+    ownca_path: "{{ pki_intermediate_ca_certificate }}"
+    ownca_privatekey_path: "{{ pki_intermediate_ca_key }}"
+    ownca_not_after: "+365d"
+    ownca_digest: sha256
+  delegate_to: localhost
+  become: false
