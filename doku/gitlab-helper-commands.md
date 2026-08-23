@@ -49,10 +49,78 @@ unset GITLAB_ROOT_PASSWORD
 
 This updates the root user password without exposing it in the command history.
 
+## Show LDAP identities for a user
+
+Use this to confirm which LDAP provider and external UID are attached to a GitLab account.
+
+```bash
+podman exec -it gitlab gitlab-rails runner '
+user = User.find_by(username: "thomas")
+raise "User not found" unless user
+
+puts "Username: #{user.username}"
+puts "Email: #{user.email}"
+puts "LDAP identities:"
+
+user.identities.each do |identity|
+  puts "  provider=#{identity.provider} extern_uid=#{identity.extern_uid}"
+end
+'
+```
+
+Replace `thomas` with the username you want to inspect.
+
+## Remove LDAP identity for a user
+
+Use this when you need to remove the LDAP-linked identity for a specific GitLab account.
+
+```bash
+podman exec -it gitlab gitlab-rails runner '
+user = User.find_by(username: "thomas")
+raise "User not found" unless user
+
+user.identities.where(provider: "ldapmain").destroy_all
+
+puts "LDAP identity removed"
+'
+```
+
+Replace `thomas` with the target username and `ldapmain` with the provider you want to remove if needed.
+
+## Enable local password for a user
+
+Use this when a user should be able to log in with a local GitLab password instead of relying on LDAP-only authentication.
+
+```bash
+gitlab@mars:~$ podman exec -it gitlab gitlab-rails runner '
+user = User.find_by(username: "thomas")
+raise "User not found" unless user
+
+user.password = "xxxxxx"
+user.password_confirmation = "xxxxxx"
+user.password_automatically_set = false
+user.save!
+
+puts "Local password enabled for #{user.username}"
+'
+Local password enabled for thomas
+gitlab@mars:~$
+```
+
+Replace `thomas` and the password value with the target account and the desired password. This explicitly disables the automatic password setting flag so the local password remains usable.
+
 ## Notes
 
 - Replace `root` with another username if you want to change a different account.
 - Run these commands only from a trusted administrative machine.
 - Keep the password input private and avoid sharing it in shell logs or terminal transcripts.
 
+## Show gitlab runner
 
+```bash
+podman exec -it gitlab gitlab-rails runner '
+Ci::Runner.find_each do |runner|
+  puts "#{runner.id}: #{runner.description} | status=#{runner.status} | type=#{runner.runner_type}"
+end
+'
+```
