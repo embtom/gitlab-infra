@@ -8,7 +8,7 @@ gitlab_service_external_host: "{{ gitlab_external_host }}"
 gitlab_service_volume_recreate: false
 gitlab_service_config_dir: /var/lib/gitlab/config
 gitlab_service_logs_dir: /var/lib/gitlab/logs
-gitlab_service_data_dir: /var/lib/gitlab/data
+gitlab_service_data_dir: /mnt/data_gitlab/data
 gitlab_service_tls_dir: "{{ gitlab_service_config_dir }}/ssl"
 gitlab_service_tls_certificate: "{{ gitlab_service_tls_dir }}/gitlab.crt"
 gitlab_service_tls_private_key: "{{ gitlab_service_tls_dir }}/gitlab.key"

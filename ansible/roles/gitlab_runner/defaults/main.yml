@@ -1,5 +1,5 @@
 ---
-gitlab_runner_user: gitlab-runner
+gitlab_runner_user: gitlab-ci
 gitlab_runner_version: "19.2.2"
 gitlab_runner_container_method: image-pull
 gitlab_runner_direct_build_image: "localhost/gitlab-runner:{{ gitlab_runner_version }}"
@@ -27,7 +27,7 @@ gitlab_runner_name: "{{ ansible_facts['fqdn'] | default(ansible_facts['hostname'
 gitlab_runner_request_concurrency: 2
 gitlab_runner_service_name: gitlab-runner
 gitlab_runner_config_dir: "/var/lib/gitlab-runner/config"
-gitlab_runner_builds_dir: "/var/lib/gitlab-runner/builds"
+gitlab_runner_builds_dir: "/mnt/data_gitlab-ci/builds"
 gitlab_runner_ca_dir: "{{ gitlab_runner_config_dir }}/certs"
 gitlab_runner_ca_certificate: "{{ gitlab_runner_ca_dir }}/root-ca.crt"
 gitlab_runner_ca_container_certificate: /etc/gitlab-runner/certs/root-ca.crt
