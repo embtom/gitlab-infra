@@ -112,6 +112,8 @@
       value: "{{ gitlab_runner_gitlab_url }}"
     - key: tls-ca-file
       value: "{{ gitlab_runner_ca_container_certificate }}"
+    - key: request_concurrency
+      value: "{{ gitlab_runner_request_concurrency }}"
 
 - name: Configure GitLab Runner job CA trust
   ansible.builtin.lineinfile:

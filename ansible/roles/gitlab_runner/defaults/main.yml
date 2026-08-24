@@ -14,6 +14,7 @@ gitlab_runner_job_network: host
 gitlab_runner_gitlab_url: "https://{{ gitlab_external_host }}:8081"
 gitlab_runner_token: ""
 gitlab_runner_name: "{{ ansible_facts['fqdn'] | default(ansible_facts['hostname'], true) }}"
+gitlab_runner_request_concurrency: 2
 gitlab_runner_service_name: gitlab-runner
 gitlab_runner_config_dir: "/var/lib/gitlab-runner/config"
 gitlab_runner_builds_dir: "/var/lib/gitlab-runner/builds"
