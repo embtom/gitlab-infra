@@ -112,8 +112,18 @@
       value: "{{ gitlab_runner_gitlab_url }}"
     - key: tls-ca-file
       value: "{{ gitlab_runner_ca_container_certificate }}"
-    - key: request_concurrency
-      value: "{{ gitlab_runner_request_concurrency }}"
+
+- name: Configure GitLab Runner request concurrency
+  ansible.builtin.lineinfile:
+    path: "{{ gitlab_runner_config_dir }}/config.toml"
+    regexp: "^\\s*request_concurrency\\s*="
+    line: "  request_concurrency = {{ gitlab_runner_request_concurrency | int }}"
+    insertafter: '^\[\[runners\]\]$'
+    owner: "{{ gitlab_runner_user }}"
+    group: "{{ gitlab_runner_user }}"
+    mode: "0600"
+  become: true
+  notify: Restart GitLab Runner service
 
 - name: Configure GitLab Runner job CA trust
   ansible.builtin.lineinfile:
