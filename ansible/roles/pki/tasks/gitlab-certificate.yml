@@ -30,7 +30,7 @@
     provider: ownca
     ownca_path: "{{ pki_intermediate_ca_certificate }}"
     ownca_privatekey_path: "{{ pki_intermediate_ca_key }}"
-    ownca_not_after: "+365d"
+    ownca_not_after: "+3650d"
     ownca_digest: sha256
   delegate_to: localhost
   become: false
