@@ -40,20 +40,20 @@
   until: gitlab_service_application_settings_check.rc == 0
   changed_when: false
 
-- name: Disable GitLab signup
-  become: true
-  become_user: "{{ gitlab_service_user }}"
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_user_uid }}"
-  ansible.builtin.command:
-    argv:
-      - podman
-      - exec
-      - "{{ gitlab_service_name }}"
-      - gitlab-rails
-      - runner
-      - '::Gitlab::CurrentSettings.update!(signup_enabled: false)'
-  changed_when: false
+# - name: Disable GitLab signup
+#   become: true
+#   become_user: "{{ gitlab_service_user }}"
+#   environment:
+#     XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_user_uid }}"
+#   ansible.builtin.command:
+#     argv:
+#       - podman
+#       - exec
+#       - "{{ gitlab_service_name }}"
+#       - gitlab-rails
+#       - runner
+#       - '::Gitlab::CurrentSettings.update!(signup_enabled: false)'
+#   changed_when: false
 
 # - name: Configure Web IDE single-origin fallback
 #   become: true
