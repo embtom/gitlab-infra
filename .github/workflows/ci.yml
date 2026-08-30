@@ -37,3 +37,57 @@ jobs:
         with:
           sarif_file: scripts/ansible-lint.sarif
           category: ansible-lint
+
+  build-containers:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+          - name: gitlab-runner
+            context: containers/gitlab-runner
+            containerfile: Containerfile
+          - name: gitlab-runner-image
+            context: containers/gitlab-runner-image
+            containerfile: Containerfile.runner
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Prepare build environment
+        uses: ./.github/actions/setup-podman
+
+      - name: Get release version
+        id: version
+        uses: ./.github/actions/get-version
+
+      - name: Build image
+        id: build
+        uses: redhat-actions/buildah-build@061ffd31bb5c3f8733a6f9bbdf00a9fb02eb708c
+        with:
+          image: ${{ github.repository }}/${{ matrix.container.name }}
+          tags: latest ${{ steps.version.outputs.release_version }}
+          containerfiles: ${{ matrix.container.context }}/${{ matrix.container.containerfile }}
+          context: ${{ matrix.container.context }}
+          build-args: VERSION=${{ steps.version.outputs.release_version }}
+          oci: true
+
+      - name: Log in to ghcr.io
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build.outputs.image }}
+          tags: latest ${{ steps.version.outputs.release_version }}
+          registry: ghcr.io
