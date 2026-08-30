@@ -123,4 +123,20 @@ Ci::Runner.find_each do |runner|
   puts "#{runner.id}: #{runner.description} | status=#{runner.status} | type=#{runner.runner_type}"
 end
 '
+
+```
+
+## Delete gitlab runner
+
+Replace `16` with the runner ID to delete. This permanently removes its GitLab
+registration; stop its local service separately when applicable.
+
+```bash
+podman exec -it gitlab gitlab-rails runner '
+runner = Ci::Runner.find_by(id: 16)
+raise "Runner 16 not found" unless runner
+
+runner.destroy!
+puts "Deleted runner 16"
+'
 ```
