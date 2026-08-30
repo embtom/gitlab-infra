@@ -1,13 +1,23 @@
 ---
 gitlab_runner_user: gitlab-runner
 gitlab_runner_version: "19.2.2"
-gitlab_runner_image: "localhost/gitlab-runner:{{ gitlab_runner_version }}"
+gitlab_runner_container_method: direct-build
+gitlab_runner_direct_build_image: "localhost/gitlab-runner:{{ gitlab_runner_version }}"
+gitlab_runner_image_pull_image: "ghcr.io/embtom/gitlab-infra/gitlab-runner:latest"
+gitlab_runner_image: >-
+  {{ gitlab_runner_direct_build_image
+     if gitlab_runner_container_method == 'direct-build'
+     else gitlab_runner_image_pull_image }}
 gitlab_runner_podman_build_extra_args: >-
   --build-arg GITLAB_RUNNER_VERSION={{ gitlab_runner_version }}
 
-gitlab_runner_container_method: direct-build
 gitlab_runner_force_rebuild: false
-gitlab_runner_job_image: "localhost/gitlab-runner-image:latest"
+gitlab_runner_direct_build_job_image: "localhost/gitlab-runner-image:latest"
+gitlab_runner_image_pull_job_image: "ghcr.io/embtom/gitlab-infra/gitlab-runner-image:latest"
+gitlab_runner_job_image: >-
+  {{ gitlab_runner_direct_build_job_image
+     if gitlab_runner_container_method == 'direct-build'
+     else gitlab_runner_image_pull_job_image }}
 gitlab_runner_job_image_pull_policy:
   - if-not-present
 gitlab_runner_job_network: host
@@ -33,3 +43,6 @@ gitlab_runner_images:
     context: containers/gitlab-runner-image
     containerfile: Containerfile.runner
     build_extra_args: ""
+gitlab_runner_pull_images:
+  - "{{ gitlab_runner_image }}"
+  - "{{ gitlab_runner_job_image }}"
