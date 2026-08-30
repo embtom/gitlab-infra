@@ -15,9 +15,9 @@
 - name: Validate GitLab Runner container method
   ansible.builtin.assert:
     that:
-      - gitlab_runner_container_method in ['direct-build', 'image_pull']
+      - gitlab_runner_container_method in ['direct-build', 'image-pull']
     fail_msg: >-
-      gitlab_runner_container_method must be either 'direct-build' or 'image_pull'.
+      gitlab_runner_container_method must be 'direct-build' or 'image-pull'.
 
 - name: Build and transfer GitLab Runner images
   become: true
@@ -28,7 +28,7 @@
 
 - name: Pull GitLab Runner images
   become: true
-  when: gitlab_runner_container_method == 'image_pull'
+  when: gitlab_runner_container_method == 'image-pull'
   block:
     - name: Include image pull tasks
       ansible.builtin.include_tasks: image_pull.yml

@@ -1,5 +1,5 @@
 gitlab_service_user: gitlab
-gitlab_service_image: docker.io/gitlab/gitlab-ce:19.2.1-ce.0
+gitlab_service_image: docker.io/gitlab/gitlab-ce:19.3.1-ce.0
 gitlab_service_name: gitlab
 gitlab_service_net: gitlabnet
 # Uses the fully qualified hostname reported by the managed host. Override in

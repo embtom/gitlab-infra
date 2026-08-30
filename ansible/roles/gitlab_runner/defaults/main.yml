@@ -1,7 +1,7 @@
 ---
 gitlab_runner_user: gitlab-runner
 gitlab_runner_version: "19.2.2"
-gitlab_runner_container_method: direct-build
+gitlab_runner_container_method: image-pull
 gitlab_runner_direct_build_image: "localhost/gitlab-runner:{{ gitlab_runner_version }}"
 gitlab_runner_image_pull_image: "ghcr.io/embtom/gitlab-infra/gitlab-runner:latest"
 gitlab_runner_image: >-
