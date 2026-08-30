@@ -8,16 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- GitLab CE deployment as a rootless Podman Quadlet service.
-- Configurable persistent directories for GitLab configuration, logs, and data.
-- Idempotent provisioning of regular users and administrators.
-- A GitLab Runner role, including registration and request-concurrency settings.
-- Container registry support and SSH repository cloning.
-- Public key infrastructure automation for a root CA, intermediate CA, and
-  GitLab TLS certificate.
-- Operational documentation for backups, restores, and common GitLab commands.
-- GitHub Actions CI that installs dependencies, runs Ansible linting, and
-  publishes lint results as SARIF.
+- GitLab Runner configuration supporting both image-pull and direct-build workflows
+- GitLab CE deployment as a rootless Podman Quadlet service
+- Configurable persistent storage for GitLab configuration, logs, and data
+- Idempotent provisioning of regular users and administrators
+- GitLab Runner configuration, including registration and request-concurrency settings
+- Container Registry support and SSH-based repository cloning
+- Automated PKI setup for a root CA, intermediate CA, and GitLab TLS certificate
+- Operational documentation covering backups, restores, and common GitLab commands
+- GitHub Actions CI for dependency installation, Ansible linting, and SARIF lint-result reporting
 
 ### Changed
 
