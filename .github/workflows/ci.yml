@@ -61,19 +61,14 @@ jobs:
       - name: Prepare build environment
         uses: ./.github/actions/setup-podman
 
-      - name: Get release version
-        id: version
-        uses: ./.github/actions/get-version
-
       - name: Build image
         id: build
         uses: redhat-actions/buildah-build@061ffd31bb5c3f8733a6f9bbdf00a9fb02eb708c
         with:
           image: ${{ github.repository }}/${{ matrix.container.name }}
-          tags: latest ${{ steps.version.outputs.release_version }}
+          tags: latest
           containerfiles: ${{ matrix.container.context }}/${{ matrix.container.containerfile }}
           context: ${{ matrix.container.context }}
-          build-args: VERSION=${{ steps.version.outputs.release_version }}
           oci: true
 
       - name: Log in to ghcr.io
@@ -89,5 +84,5 @@ jobs:
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ${{ steps.build.outputs.image }}
-          tags: latest ${{ steps.version.outputs.release_version }}
+          tags: latest
           registry: ghcr.io
