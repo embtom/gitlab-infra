@@ -1,0 +1,11 @@
+---
+- name: Pull GitLab Runner images from registry
+  become: true
+  become_user: "{{ gitlab_runner_user }}"
+  containers.podman.podman_image:
+    name: "{{ gitlab_runner_pull_image }}"
+    state: present
+  loop: "{{ gitlab_runner_pull_images }}"
+  loop_control:
+    loop_var: gitlab_runner_pull_image
+    label: "{{ gitlab_runner_pull_image }}"
