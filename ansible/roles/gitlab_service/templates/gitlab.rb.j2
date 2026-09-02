@@ -30,6 +30,11 @@ logging['logrotate_compress'] = 'compress'
 registry_external_url 'https://{{ gitlab_service_external_host }}:{{ gitlab_service_registry_port }}'
 gitlab_rails['registry_enabled'] = true
 registry['enable'] = true
+registry['storage'] = {
+  'filesystem' => {
+    'rootdirectory' => '/var/opt/gitlab/gitlab-rails/shared/registry'
+  }
+}
 registry['nginx']['ssl_certificate'] = '{{ gitlab_service_tls_container_certificate }}'
 registry['nginx']['ssl_certificate_key'] = '{{ gitlab_service_tls_container_private_key }}'
 {% else %}
