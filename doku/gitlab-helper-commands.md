@@ -124,3 +124,41 @@ Ci::Runner.find_each do |runner|
 end
 '
 ```
+
+## Show tables with job_id and project_id columns
+
+```bash
+podman exec gitlab gitlab-psql -d gitlabhq_production -c "
+SELECT table_schema, table_name, column_name
+FROM information_schema.columns
+WHERE column_name IN ('job_id', 'project_id')
+  AND (
+      table_name ILIKE '%artifact%'
+      OR table_name ILIKE '%build%'
+  )
+ORDER BY table_schema, table_name, column_name;
+"
+```
+
+## Show job artifact size by project
+
+Use GitLab's Rails models instead of querying CI tables directly. GitLab 19
+partitions its CI relations, and a project's full path is a Rails method, not
+a `projects` table column.
+
+```bash
+podman exec -it gitlab gitlab-rails runner '
+totals = Ci::JobArtifact.joins(job: :project).group("projects.id").sum(:size)
+
+Project.where(id: totals.keys).find_each do |project|
+  size = ActionController::Base.helpers.number_to_human_size(totals.fetch(project.id))
+  puts [project.id, project.full_path, size].join("\t")
+end
+'
+```
+
+The output is tab-separated and the final column is a human-readable size.
+This reports artifact metadata stored in PostgreSQL. It does not include
+artifacts uploaded to external object storage. Deleting database rows directly
+is unsupported; use GitLab's artifact-expiration or project cleanup features
+to reclaim artifact storage.
