@@ -24,6 +24,19 @@
     - "{{ gitlab_service_logs_dir }}"
     - "{{ gitlab_service_data_dir }}"
 
+- name: Create GitLab storage parent directories
+  become: true
+  ansible.builtin.file:
+    path: "{{ item | dirname }}"
+    state: directory
+    owner: "{{ gitlab_service_user }}"
+    group: "{{ gitlab_service_user }}"
+    mode: "0750"
+  loop:
+    - "{{ gitlab_service_config_dir }}"
+    - "{{ gitlab_service_logs_dir }}"
+    - "{{ gitlab_service_data_dir }}"
+
 - name: Create GitLab storage directories
   become: true
   ansible.builtin.file:
@@ -46,10 +59,32 @@
     group: "{{ gitlab_service_user }}"
     mode: "0700"
 
+- name: Create GitLab trusted certificate directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ gitlab_service_config_dir }}/trusted-certs"
+    state: directory
+    owner: "{{ gitlab_service_user }}"
+    group: "{{ gitlab_service_user }}"
+    mode: "0750"
+  when: gitlab_service_ldap_enabled | bool
+
+- name: Deploy OpenLDAP root CA certificate
+  become: true
+  ansible.builtin.copy:
+    src: "{{ gitlab_service_ldap_ca_certificate }}"
+    dest: "{{ gitlab_service_config_dir }}/trusted-certs/openldap-root-ca.crt"
+    owner: "{{ gitlab_service_user }}"
+    group: "{{ gitlab_service_user }}"
+    mode: "0644"
+  when: gitlab_service_ldap_enabled | bool
+
 - name: Deploy GitLab TLS private key
   become: true
   ansible.builtin.copy:
-    src: "{{ pki_gitlab_private_key }}"
+    src: >-
+      {{ pki_intermediate_ca_dir ~ '/private/' ~
+         gitlab_service_tls_certificate_name ~ '.key' }}
     dest: "{{ gitlab_service_tls_private_key }}"
     owner: "{{ gitlab_service_user }}"
     group: "{{ gitlab_service_user }}"
@@ -59,9 +94,9 @@
 - name: Deploy GitLab TLS certificate chain
   become: true
   ansible.builtin.copy:
-    content: |-
-      {{ lookup('ansible.builtin.file', pki_gitlab_certificate) }}
-      {{ lookup('ansible.builtin.file', pki_intermediate_ca_certificate) }}
+    src: >-
+      {{ pki_intermediate_ca_dir ~ '/certs/' ~
+         gitlab_service_tls_certificate_name ~ '-fullchain.crt' }}
     dest: "{{ gitlab_service_tls_certificate }}"
     owner: "{{ gitlab_service_user }}"
     group: "{{ gitlab_service_user }}"

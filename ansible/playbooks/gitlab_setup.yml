@@ -6,6 +6,13 @@
   vars:
     gitlab_external_host: >-
       {{ ansible_facts['fqdn'] | default(ansible_facts['hostname'], true) }}
+    gitlab_service_tls_certificate_name: >-
+      {{ gitlab_external_host | regex_replace('[^A-Za-z0-9._-]', '_') }}-gitlab
+    pki_server_certificates:
+      - name: "{{ gitlab_service_tls_certificate_name }}"
+        common_name: "{{ gitlab_external_host }}"
+        subject_alt_names:
+          - "DNS:{{ gitlab_external_host }}"
 
   pre_tasks:
     - name: Show deployment target
