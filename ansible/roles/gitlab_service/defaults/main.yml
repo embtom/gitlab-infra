@@ -10,11 +10,14 @@ gitlab_service_config_dir: /var/lib/gitlab/config
 gitlab_service_logs_dir: /var/lib/gitlab/logs
 gitlab_service_data_dir: /var/lib/gitlab/data
 gitlab_service_tls_dir: "{{ gitlab_service_config_dir }}/ssl"
-gitlab_service_tls_certificate: "{{ gitlab_service_tls_dir }}/gitlab.crt"
-gitlab_service_tls_private_key: "{{ gitlab_service_tls_dir }}/gitlab.key"
+gitlab_service_tls_certificate: "{{ gitlab_service_tls_dir }}/{{ gitlab_service_tls_certificate_name }}-fullchain.crt"
+gitlab_service_tls_private_key: "{{ gitlab_service_tls_dir }}/{{ gitlab_service_tls_certificate_name }}.key"
 gitlab_service_tls_container_dir: /etc/gitlab/ssl
-gitlab_service_tls_container_certificate: "{{ gitlab_service_tls_container_dir }}/gitlab.crt"
-gitlab_service_tls_container_private_key: "{{ gitlab_service_tls_container_dir }}/gitlab.key"
+gitlab_service_tls_container_certificate: >-
+  {{ gitlab_service_tls_container_dir }}/{{ gitlab_service_tls_certificate_name }}-fullchain.crt
+gitlab_service_tls_container_private_key: >-
+  {{ gitlab_service_tls_container_dir }}/{{ gitlab_service_tls_certificate_name }}.key
+gitlab_service_tls_certificate_name: "{{ gitlab_service_external_host }}-gitlab"
 
 gitlab_service_web_port: 8081
 gitlab_service_ssh_port: 2223
@@ -25,6 +28,22 @@ gitlab_service_registry_port: 5050
 gitlab_service_web_ide_single_origin_fallback_enabled: false
 # One of: DEBUG, INFO, WARN, ERROR, FATAL, UNKNOWN
 gitlab_service_log_level: WARN
+
+# Enable login and automatic account provisioning from the central OpenLDAP
+# directory. The bind credentials must be supplied outside version control.
+gitlab_service_ldap_enabled: false
+gitlab_service_ldap_label: OpenLDAP
+gitlab_service_ldap_host: ""
+gitlab_service_ldap_port: 636
+gitlab_service_ldap_encryption: simple_tls
+gitlab_service_ldap_verify_certificates: true
+gitlab_service_ldap_ca_certificate: ""
+gitlab_service_ldap_ca_file: /etc/gitlab/trusted-certs/openldap-root-ca.crt
+gitlab_service_ldap_base: ou=People,dc=embtom,dc=org
+gitlab_service_ldap_uid: uid
+gitlab_service_ldap_bind_dn: ""
+gitlab_service_ldap_bind_password: ""
+gitlab_service_ldap_user_filter: ""
 
 # The initial root password is set via gitlab_rails['initial_root_password']
 # gitlab_service_root_password: "X9!qL7#vN2$Kp4@Rm8"

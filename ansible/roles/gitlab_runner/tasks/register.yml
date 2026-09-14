@@ -1,4 +1,16 @@
 ---
+- name: Create GitLab Runner storage parent directories
+  ansible.builtin.file:
+    path: "{{ item | dirname }}"
+    state: directory
+    owner: "{{ gitlab_runner_user }}"
+    group: "{{ gitlab_runner_user }}"
+    mode: "0750"
+  become: true
+  loop:
+    - "{{ gitlab_runner_config_dir }}"
+    - "{{ gitlab_runner_builds_dir }}"
+
 - name: Create GitLab Runner configuration directory
   ansible.builtin.file:
     path: "{{ gitlab_runner_config_dir }}"
@@ -93,7 +105,7 @@
   changed_when: true
   become: true
   become_user: "{{ gitlab_runner_user }}"
-  no_log: true
+  no_log: false
   when: not gitlab_runner_config.stat.exists
 
 - name: Configure GitLab Runner TLS connection

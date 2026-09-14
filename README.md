@@ -144,11 +144,12 @@ TLS. To generate or renew only the PKI material, run:
 ### PKI Locations
 
 The root CA, intermediate CA, and GitLab server certificate are generated on
-the Ansible control machine, not on the managed host. By default, all source
-material is stored beneath:
+the Ansible control machine, not on the managed host. GitLab shares this PKI
+with the other embtom infrastructure services. By default, all source material
+is stored beneath:
 
 ```text
-~/.local/share/gitlab-infra/pki/
+~/.local/share/embtom/pki/
 ```
 
 This directory contains the root CA in `private/`, `csr/`, and `certs/`, and
@@ -156,12 +157,14 @@ the intermediate CA plus GitLab server key and certificate beneath
 `intermediate/private/`, `intermediate/csr/`, and `intermediate/certs/`.
 Private CA keys remain on the control machine.
 
-During GitLab deployment, the managed host receives these files in
+GitLab's controller-side artifacts use the name `<hostname>-gitlab`, for
+example `jupiter-gitlab.key` and `jupiter-gitlab-fullchain.crt`. During GitLab
+deployment, the managed host receives the key and full certificate chain in
 `/var/lib/gitlab/config/ssl/` by default:
 
 ```text
-gitlab.key  # GitLab server private key
-gitlab.crt  # GitLab server certificate followed by the intermediate CA
+<hostname>-gitlab.key            # GitLab server private key
+<hostname>-gitlab-fullchain.crt  # GitLab server certificate followed by the intermediate CA
 ```
 
 When the runner role is deployed, it also receives the root CA certificate at
