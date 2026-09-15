@@ -132,7 +132,9 @@ def resolve_tags(args: argparse.Namespace) -> list[str]:
     return tags
 
 
-def build_command(tags: list[str], limit: str, vars_file: Path) -> list[str]:
+def build_command(
+    tags: list[str], limit: str, vars_file: Path, vault_file: Path
+) -> list[str]:
     requires_become = set(tags) != {"pki"}
 
     command = [
@@ -145,6 +147,7 @@ def build_command(tags: list[str], limit: str, vars_file: Path) -> list[str]:
             if not requires_become or os.environ.get("GITLAB_INFRA_BECOME_PASSWORD")
             else ["--ask-become-pass"]
         ),
+        *(["--ask-vault-pass"] if vault_file.is_file() else []),
         "--limit",
         limit,
         "--tags",
@@ -168,6 +171,7 @@ def main() -> int:
 
     script_dir = Path(__file__).resolve().parent
     ansible_dir = script_dir.parent / "ansible"
+    vault_file = ansible_dir / "inventories/group_vars/all/vault.yml"
 
     environment = os.environ.copy()
     user_bin = Path(site.getuserbase()) / "bin"
@@ -176,6 +180,7 @@ def main() -> int:
     print(f"Host: {args.host}")
     print(f"Recreate: {args.recreate}")
     print(f"Tags: {','.join(tags)}")
+    print(f"Vault password required: {'yes' if vault_file.is_file() else 'no'}")
 
     with tempfile.NamedTemporaryFile(
         mode="w",
@@ -188,7 +193,7 @@ def main() -> int:
         json.dump(extra_vars, vars_file)
 
     try:
-        command = build_command(tags, limit, vars_path)
+        command = build_command(tags, limit, vars_path, vault_file)
 
         try:
             return subprocess.run(

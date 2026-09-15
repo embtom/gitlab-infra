@@ -12,6 +12,9 @@ PublishPort={{ gitlab_service_ssh_port }}:22
 {% if gitlab_service_registry_enabled | bool %}
 PublishPort={{ gitlab_service_registry_port }}:{{ gitlab_service_registry_port }}
 {% endif %}
+{% if gitlab_service_ldap.enabled | bool and gitlab_service_ldap.host_address | length > 0 %}
+AddHost={{ gitlab_service_ldap.host }}:{{ gitlab_service_ldap.host_address }}
+{% endif %}
 Network={{ gitlab_service_net }}
 
 [Service]

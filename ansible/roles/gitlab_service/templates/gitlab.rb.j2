@@ -12,22 +12,25 @@ gitlab_rails['env'] = {
   'GITLAB_LOG_LEVEL' => '{{ gitlab_service_log_level }}'
 }
 
-{% if gitlab_service_ldap_enabled | bool %}
+gitlab_rails['ldap_enabled'] = {{ gitlab_service_ldap.enabled | bool | to_json }}
+
+{% if gitlab_service_ldap.enabled | bool %}
 gitlab_rails['ldap_servers'] = {
   'main' => {
-    'label' => {{ gitlab_service_ldap_label | to_json }},
-    'host' => {{ gitlab_service_ldap_host | to_json }},
-    'port' => {{ gitlab_service_ldap_port }},
-    'uid' => {{ gitlab_service_ldap_uid | to_json }},
-    'bind_dn' => {{ gitlab_service_ldap_bind_dn | to_json }},
-    'password' => {{ gitlab_service_ldap_bind_password | to_json }},
-    'encryption' => {{ gitlab_service_ldap_encryption | to_json }},
-    'verify_certificates' => {{ gitlab_service_ldap_verify_certificates | to_json }},
-    'ca_file' => {{ gitlab_service_ldap_ca_file | to_json }},
-    'base' => {{ gitlab_service_ldap_base | to_json }},
-    'user_filter' => {{ gitlab_service_ldap_user_filter | to_json }},
+    'label' => {{ gitlab_service_ldap.label | to_json }},
+    'host' => {{ gitlab_service_ldap.host | to_json }},
+    'port' => {{ gitlab_service_ldap.port }},
+    'uid' => {{ gitlab_service_ldap.uid | to_json }},
+    'bind_dn' => {{ gitlab_service_ldap.bind_dn | to_json }},
+    'password' => {{ gitlab_service_ldap.bind_password | to_json }},
+    'encryption' => {{ gitlab_service_ldap.encryption | to_json }},
+    'verify_certificates' => {{ gitlab_service_ldap.verify_certificates | to_json }},
+    'ca_file' => {{ gitlab_service_ldap.ca_file | to_json }},
+    'base' => {{ gitlab_service_ldap.base | to_json }},
+    'user_filter' => {{ gitlab_service_ldap.user_filter | to_json }},
+    'allow_username_or_email_login' => {{ gitlab_service_ldap.allow_username_or_email_login | to_json }},
     'attributes' => {
-      'username' => [{{ gitlab_service_ldap_uid | to_json }}],
+      'username' => [{{ gitlab_service_ldap.uid | to_json }}],
       'email' => ['mail'],
       'name' => ['cn', 'displayName'],
       'first_name' => ['givenName'],

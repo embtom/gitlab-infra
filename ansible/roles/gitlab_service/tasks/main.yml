@@ -1,25 +1,26 @@
 ---
 - name: Check GitLab LDAP CA certificate on controller
   ansible.builtin.stat:
-    path: "{{ gitlab_service_ldap_ca_certificate }}"
+    path: "{{ gitlab_service_ldap.ca_certificate }}"
   delegate_to: localhost
   become: false
   register: gitlab_service_ldap_ca_certificate_info
-  when: gitlab_service_ldap_enabled | bool
+  when: gitlab_service_ldap.enabled | bool
 
 - name: Validate GitLab LDAP settings
-  when: gitlab_service_ldap_enabled | bool
+  when: gitlab_service_ldap.enabled | bool
   ansible.builtin.assert:
     that:
-      - gitlab_service_ldap_host | length > 0
-      - gitlab_service_ldap_base | length > 0
-      - gitlab_service_ldap_uid | length > 0
-      - gitlab_service_ldap_bind_dn | length > 0
-      - gitlab_service_ldap_bind_password | length > 0
+      - gitlab_service_ldap.host | length > 0
+      - gitlab_service_ldap.base | length > 0
+      - gitlab_service_ldap.uid | length > 0
+      - gitlab_service_ldap.bind_dn | length > 0
+      - gitlab_service_ldap.bind_password | length > 0
+      - gitlab_service_ldap.required_group_dn | length > 0
       - gitlab_service_ldap_ca_certificate_info.stat.isreg
     fail_msg: >-
-      Set GitLab LDAP host, base, uid, bind credentials, and a readable CA
-      certificate before enabling gitlab_service_ldap_enabled.
+      Set GitLab LDAP host, base, uid, bind credentials, required group DN, and
+      a readable CA certificate before enabling gitlab_service_ldap.enabled.
   no_log: true
 
 - name: Stop and remove container service

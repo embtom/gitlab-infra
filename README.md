@@ -75,6 +75,20 @@ The install scripts install the Python requirements, Ansible, `ansible-lint`, `y
 
 ## Configuration
 
+Create local configuration and an encrypted Ansible Vault for secrets:
+
+```bash
+./scripts/configure-gitlab.py
+```
+
+The configurator asks whether GitLab LDAP authentication is enabled. When it
+is enabled, it asks for the LDAP certificate hostname. For an OpenLDAP service
+on the same host, it configures Podman's dynamic `host-gateway` mapping, so no
+DHCP address is stored and the hostname remains valid for TLS. For a remote
+LDAP service, standard DNS resolution is used. The LDAP bind password is stored
+in the vault. Otherwise, GitLab is deployed without LDAP authentication. The
+generated files are local and ignored by Git.
+
 Set deployment-specific values as inventory variables in
 `ansible/inventories/hosts.yml`, or provide them from a separate Ansible
 variable file. The role defaults are documented in

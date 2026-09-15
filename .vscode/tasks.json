@@ -46,6 +46,17 @@
       ]
     },
     {
+      "label": "ansible: configure GitLab",
+      "type": "shell",
+      "command": "python3 ${workspaceFolder}/scripts/configure-gitlab.py",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "ansible: setup PKI",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/deploy.py",
