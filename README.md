@@ -241,6 +241,16 @@ Provision an administrator:
 `--provision-admin` is a flag; it takes no value. User provisioning is
 idempotent: existing users are not modified.
 
+Promote an existing user, including an LDAP user who has logged in once, to an
+administrator:
+
+```bash
+./scripts/deploy.py --host localhost --make-admin alice
+```
+
+This command only updates an existing GitLab account and does not require or
+change its password.
+
 Avoid entering production passwords directly in a shared shell history. The VS Code provisioning tasks use a masked password prompt and pass it without shell interpretation.
 
 ## Helper Commands

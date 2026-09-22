@@ -1,0 +1,36 @@
+---
+- name: Ensure GitLab administrator username is set
+  ansible.builtin.assert:
+    that:
+      - gitlab_service_promote_admin_username | length > 0
+    fail_msg: Set gitlab_service_promote_admin_username to an existing GitLab username.
+
+- name: Get GitLab service user entry
+  become: true
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ gitlab_service_user }}"
+  register: gitlab_user_admin_service_user_info
+
+- name: Grant GitLab administrator rights
+  become: true
+  become_user: "{{ gitlab_service_user }}"
+  environment:
+    XDG_RUNTIME_DIR: >-
+      /run/user/{{ gitlab_user_admin_service_user_info.ansible_facts.getent_passwd[gitlab_service_user][1] }}
+    GITLAB_ADMIN_USERNAME: "{{ gitlab_service_promote_admin_username }}"
+  ansible.builtin.command:
+    argv:
+      - podman
+      - exec
+      - -e
+      - GITLAB_ADMIN_USERNAME
+      - "{{ gitlab_service_name }}"
+      - gitlab-rails
+      - runner
+      - >-
+        user = User.find_by(username: ENV.fetch('GITLAB_ADMIN_USERNAME'));
+        raise "GitLab user not found: #{ENV.fetch('GITLAB_ADMIN_USERNAME')}" unless user;
+        if user.admin?; puts 'unchanged'; else; user.update!(admin: true); puts 'changed'; end
+  register: gitlab_user_admin_promotion
+  changed_when: gitlab_user_admin_promotion.stdout | trim == 'changed'

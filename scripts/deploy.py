@@ -71,6 +71,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Grant admin rights to --provision-user",
     )
+    parser.add_argument(
+        "--make-admin",
+        metavar="USERNAME",
+        help="Grant admin rights to an existing GitLab user",
+    )
 
     args = parser.parse_args()
 
@@ -88,6 +93,9 @@ def parse_args() -> argparse.Namespace:
             "--provision-email, --provision-password and --provision-admin "
             "require --provision-user"
         )
+
+    if args.make_admin and args.provision_user:
+        parser.error("--make-admin cannot be combined with --provision-user")
 
     return args
 
@@ -117,6 +125,9 @@ def build_extra_vars(args: argparse.Namespace) -> dict[str, object]:
             }
         )
 
+    if args.make_admin:
+        extra_vars["gitlab_service_promote_admin_username"] = args.make_admin
+
     return extra_vars
 
 
@@ -124,10 +135,17 @@ def resolve_tags(args: argparse.Namespace) -> list[str]:
     if args.tags:
         tags = [tag.strip() for tag in args.tags.split(",") if tag.strip()]
     else:
-        tags = ["provision_user"] if args.provision_user else ["service"]
+        if args.provision_user:
+            tags = ["provision_user"]
+        elif args.make_admin:
+            tags = ["promote_admin"]
+        else:
+            tags = ["service"]
 
     if args.provision_user and "provision_user" not in tags:
         tags.append("provision_user")
+    if args.make_admin and "promote_admin" not in tags:
+        tags.append("promote_admin")
 
     return tags
 

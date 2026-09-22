@@ -138,6 +138,26 @@
       }
     },
     {
+      "label": "ansible: make existing user administrator",
+      "type": "process",
+      "command": "${workspaceFolder}/scripts/deploy.py",
+      "args": [
+        "--host",
+        "${input:targetHost}",
+        "--make-admin",
+        "${input:existingGitLabUser}"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "options": {
+        "env": {
+          "GITLAB_INFRA_BECOME_PASSWORD": "${input:becomePassword}"
+        }
+      }
+    },
+    {
       "label": "ansible: deploy gitlab runner to host",
       "type": "process",
       "command": "${workspaceFolder}/scripts/deploy.py",
@@ -192,6 +212,11 @@
       "type": "promptString",
       "description": "Enter the password to provision",
       "password": true
+    },
+    {
+      "id": "existingGitLabUser",
+      "type": "promptString",
+      "description": "Enter the existing GitLab username to make administrator"
     },
     {
       "id": "becomePassword",
