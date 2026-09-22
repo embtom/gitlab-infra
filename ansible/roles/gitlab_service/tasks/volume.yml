@@ -67,17 +67,17 @@
     owner: "{{ gitlab_service_user }}"
     group: "{{ gitlab_service_user }}"
     mode: "0750"
-  when: gitlab_service_ldap_enabled | bool
+  when: gitlab_service_ldap.enabled | bool
 
 - name: Deploy OpenLDAP root CA certificate
   become: true
   ansible.builtin.copy:
-    src: "{{ gitlab_service_ldap_ca_certificate }}"
+    src: "{{ gitlab_service_ldap.ca_certificate }}"
     dest: "{{ gitlab_service_config_dir }}/trusted-certs/openldap-root-ca.crt"
     owner: "{{ gitlab_service_user }}"
     group: "{{ gitlab_service_user }}"
     mode: "0644"
-  when: gitlab_service_ldap_enabled | bool
+  when: gitlab_service_ldap.enabled | bool
 
 - name: Deploy GitLab TLS private key
   become: true

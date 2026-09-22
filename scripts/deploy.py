@@ -71,6 +71,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Grant admin rights to --provision-user",
     )
+    parser.add_argument(
+        "--make-admin",
+        metavar="USERNAME",
+        help="Grant admin rights to an existing GitLab user",
+    )
 
     args = parser.parse_args()
 
@@ -88,6 +93,9 @@ def parse_args() -> argparse.Namespace:
             "--provision-email, --provision-password and --provision-admin "
             "require --provision-user"
         )
+
+    if args.make_admin and args.provision_user:
+        parser.error("--make-admin cannot be combined with --provision-user")
 
     return args
 
@@ -117,6 +125,9 @@ def build_extra_vars(args: argparse.Namespace) -> dict[str, object]:
             }
         )
 
+    if args.make_admin:
+        extra_vars["gitlab_service_promote_admin_username"] = args.make_admin
+
     return extra_vars
 
 
@@ -124,15 +135,24 @@ def resolve_tags(args: argparse.Namespace) -> list[str]:
     if args.tags:
         tags = [tag.strip() for tag in args.tags.split(",") if tag.strip()]
     else:
-        tags = ["provision_user"] if args.provision_user else ["service"]
+        if args.provision_user:
+            tags = ["provision_user"]
+        elif args.make_admin:
+            tags = ["promote_admin"]
+        else:
+            tags = ["service"]
 
     if args.provision_user and "provision_user" not in tags:
         tags.append("provision_user")
+    if args.make_admin and "promote_admin" not in tags:
+        tags.append("promote_admin")
 
     return tags
 
 
-def build_command(tags: list[str], limit: str, vars_file: Path) -> list[str]:
+def build_command(
+    tags: list[str], limit: str, vars_file: Path, vault_file: Path
+) -> list[str]:
     requires_become = set(tags) != {"pki"}
 
     command = [
@@ -145,6 +165,7 @@ def build_command(tags: list[str], limit: str, vars_file: Path) -> list[str]:
             if not requires_become or os.environ.get("GITLAB_INFRA_BECOME_PASSWORD")
             else ["--ask-become-pass"]
         ),
+        *(["--ask-vault-pass"] if vault_file.is_file() else []),
         "--limit",
         limit,
         "--tags",
@@ -168,6 +189,7 @@ def main() -> int:
 
     script_dir = Path(__file__).resolve().parent
     ansible_dir = script_dir.parent / "ansible"
+    vault_file = ansible_dir / "inventories/group_vars/all/vault.yml"
 
     environment = os.environ.copy()
     user_bin = Path(site.getuserbase()) / "bin"
@@ -176,6 +198,7 @@ def main() -> int:
     print(f"Host: {args.host}")
     print(f"Recreate: {args.recreate}")
     print(f"Tags: {','.join(tags)}")
+    print(f"Vault password required: {'yes' if vault_file.is_file() else 'no'}")
 
     with tempfile.NamedTemporaryFile(
         mode="w",
@@ -188,7 +211,7 @@ def main() -> int:
         json.dump(extra_vars, vars_file)
 
     try:
-        command = build_command(tags, limit, vars_path)
+        command = build_command(tags, limit, vars_path, vault_file)
 
         try:
             return subprocess.run(

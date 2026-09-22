@@ -30,3 +30,6 @@
     - role: gitlab_user_provision
       tags: [provision_user]
       when: gitlab_service_provision_user_name is defined
+    - role: gitlab_user_admin
+      tags: [promote_admin]
+      when: gitlab_service_promote_admin_username is defined
