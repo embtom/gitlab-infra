@@ -61,6 +61,14 @@ jobs:
       - name: Prepare build environment
         uses: ./.github/actions/setup-podman
 
+      - name: Read GitLab Runner version
+        id: runner-version
+        run: |
+          version="$(sed -n 's/^gitlab_runner_version: "\([^"]*\)"$/\1/p' \
+            ansible/roles/gitlab_runner/defaults/main.yml)"
+          test -n "${version}"
+          echo "value=${version}" >> "${GITHUB_OUTPUT}"
+
       - name: Build image
         id: build
         uses: redhat-actions/buildah-build@061ffd31bb5c3f8733a6f9bbdf00a9fb02eb708c
@@ -69,6 +77,8 @@ jobs:
           tags: latest
           containerfiles: ${{ matrix.container.context }}/${{ matrix.container.containerfile }}
           context: ${{ matrix.container.context }}
+          build-args: >-
+            ${{ matrix.container.name == 'gitlab-runner' && format('GITLAB_RUNNER_VERSION={0}', steps.runner-version.outputs.value) || '' }}
           oci: true
 
       - name: Log in to ghcr.io

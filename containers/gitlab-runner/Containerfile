@@ -1,7 +1,7 @@
 FROM debian:trixie
 
 ENV DEBIAN_FRONTEND=noninteractive
-ARG GITLAB_RUNNER_VERSION=19.2.2
+ARG GITLAB_RUNNER_VERSION
 
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
