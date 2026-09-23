@@ -2,5 +2,32 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/ansible/roles/gitlab_runner/defaults/main.yml$/"
+      ],
+      "matchStrings": [
+        "gitlab_runner_version: \\\"(?<currentValue>[^\\\"]+)\\\""
+      ],
+      "depNameTemplate": "gitlab-org/gitlab-runner",
+      "datasourceTemplate": "gitlab-tags",
+      "registryUrlTemplate": "https://gitlab.com",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/ansible/roles/gitlab_service/defaults/main.yml$/"
+      ],
+      "matchStrings": [
+        "gitlab_service_image: docker.io/gitlab/gitlab-ce:(?<currentValue>[^\\s]+)"
+      ],
+      "depNameTemplate": "gitlab/gitlab-ce",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
   ]
 }
