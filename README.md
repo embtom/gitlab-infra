@@ -1,48 +1,79 @@
 # GitLab Infrastructure
 
-An Ansible-based infrastructure for deploying a self-hosted GitLab CE and
-GitLab Runner environment with rootless Podman and systemd Quadlet.
+Ansible-based infrastructure for deploying a self-hosted **GitLab CE and
+GitLab Runner platform** with **rootless Podman** and **systemd Quadlet**.
 
 [![CI](https://github.com/embtom/gitlab-infra/actions/workflows/ci.yml/badge.svg)](https://github.com/embtom/gitlab-infra/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/embtom/gitlab-infra)](https://github.com/embtom/gitlab-infra/releases)
 
-Everything needed to run an internal GitLab platform on a Linux host: source
-control, package and container registries, CI execution, TLS, and operational
-automation.
+GitLab provides source control, package and container registries, CI execution,
+TLS, and the automation required to operate the platform as reproducible
+infrastructure.
 
-## Included
+## Features
 
-- GitLab CE with persistent configuration, logs, data, the package registry,
-  container registry, HTTPS, and SSH repository access.
-- A private root CA, intermediate CA, and GitLab TLS certificate.
-- A rootless GitLab Runner with configurable concurrency, job network, pull
-  policy, and custom CA trust.
-- Prebuilt GHCR runner images or local builds for isolated environments.
-- Idempotent deployment, user provisioning, backup guidance, CI validation,
-  and versioned image releases.
+- **GitLab CE** with persistent configuration, logs, data, package registry,
+  container registry, HTTPS, and SSH repository access
+- **Rootless GitLab Runner** with configurable concurrency, job networking,
+  image pull policy, and custom CA trust
+- **systemd Quadlet** for container lifecycle management
+- **Private PKI** with a root CA, intermediate CA, and GitLab TLS certificate
+- **Ansible automation** for provisioning, configuration, deployment, and
+  validation
+- **GHCR images** for reproducible runner deployments
+- **Local builds** for offline environments and custom runner images
+- **LDAP integration** with group-based GitLab access
+- **Persistent host storage** separated from the containers
+- **User provisioning** and administrator promotion
+- **Backup and restore** documentation
+- **Versioned releases** with semantic container image tags
+
+## Related Infrastructure
+
+This repository provides the GitLab and CI layer of the
+[embtom infrastructure](https://github.com/embtom).
+
+For centralized identity and LDAP services, see
+[`embtom/openldap-infra`](https://github.com/embtom/openldap-infra).
+
+```mermaid
+flowchart TB
+    LDAP["openldap-infra<br/>OpenLDAP<br/>Private PKI / TLS<br/>LDAP Account Manager<br/>Samba schema support"]
+    GITLAB["gitlab-infra<br/>GitLab CE<br/>Container Registry<br/>GitLab Runner<br/>Rootless Podman<br/>systemd Quadlet"]
+
+    LDAP -->|LDAPS| GITLAB
+```
+
+Both projects use the same infrastructure principles:
+
+- Ansible-managed deployment
+- rootless Podman
+- systemd Quadlet
+- private PKI and TLS
+- persistent host-managed storage
+- versioned container images
+- reproducible deployment workflows
 
 ## Architecture
 
-```text
-Control machine
-    |
-    | Ansible / SSH
-    v
-Linux host
-    |
-    +-- systemd --user
-    |     |
-    |     +-- gitlab user
-    |     |     +-- GitLab Quadlet
-    |     |           +-- GitLab container
-    |     |
-    |     +-- gitlab-runner user
-    |           +-- GitLab Runner Quadlet
-    |                 +-- GitLab Runner container
-    |
-    +-- Persistent GitLab / Runner storage
-    |
-    +-- GitLab TLS certificate and Runner CA trust
+```mermaid
+flowchart TD
+  ansible[Ansible] --> pki[PKI]
+  ansible --> configuration[Configuration]
+  pki --> gitlab_quadlet[GitLab Quadlet]
+  pki --> runner_quadlet[GitLab Runner Quadlet]
+  configuration --> gitlab_quadlet
+  configuration --> runner_quadlet
+  gitlab_quadlet --> systemd[systemd user services]
+  runner_quadlet --> systemd
+  systemd --> podman[rootless Podman]
+  podman --> gitlab[GitLab CE]
+  podman --> runner[GitLab Runner]
+  gitlab --> storage[Persistent GitLab storage]
+  runner --> storage
+  openldap[OpenLDAP] -. optional LDAPS .-> gitlab
+  classDef ldap fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+  class openldap ldap
 ```
 
 Ansible connects from the control machine to configure the Linux host and
@@ -61,8 +92,50 @@ certificate are deployed to the host.
 - A user account configured for rootless Podman
 - systemd --user available for that user
 - Python 3 and `pipx` on the control machine
-- Remote deployments require a working OpenSSH client configuration (for example, `~/.ssh/config` with the target host, user, and key), so `ssh <remote-host>` succeeds; privilege escalation is also required on remote targets
-- A GitLab Runner registration token when deploying a runner for the first time
+- Remote deployments require a working OpenSSH configuration so
+  `ssh <remote-host>` succeeds
+- Privilege escalation is required for host-level configuration on remote
+  targets
+- A GitLab Runner registration token for the first runner deployment
+
+## Quick Start
+
+Install the required dependencies:
+
+```bash
+./scripts/install-requirements
+./scripts/install-ansible
+```
+
+Create the local configuration and encrypted Ansible Vault:
+
+```bash
+./scripts/configure-gitlab.py
+```
+
+Deploy locally:
+
+```bash
+./scripts/deploy.py --host localhost
+```
+
+Or deploy to a remote host:
+
+```bash
+./scripts/deploy.py --host <remote-host>
+```
+
+After deployment, GitLab is available on the configured external host. The
+default web port is `8081` and the container registry is available on port
+`5050`.
+
+For a first-time runner deployment:
+
+```bash
+./scripts/deploy.py --host localhost --tags runner
+```
+
+The deployment prompts for the runner registration token when required.
 
 ## Install Dependencies
 
@@ -112,9 +185,10 @@ gitlab_runner_image_pull_job_image: ghcr.io/embtom/gitlab-infra/gitlab-runner-im
 gitlab_runner_request_concurrency: 2
 ```
 
-Use release-tagged runner images in production. Set
-`gitlab_runner_container_method: direct-build` to build and transfer both
-runner images from the control machine instead of pulling them from GHCR.
+For production deployments, use a release-tagged runner image instead of
+`latest`. Set `gitlab_runner_container_method: direct-build` to build and
+transfer both runner images from the control machine instead of pulling them
+from GHCR.
 
 ## Deploy GitLab
 
@@ -136,6 +210,9 @@ Recreate the GitLab data directories before deployment:
 ./scripts/deploy.py --host localhost --recreate true
 ```
 
+> **Warning:** Recreating the data directories is destructive. Use it only
+> when intentionally starting with fresh GitLab data.
+
 Ansible uses privilege escalation for host-level configuration and directory
 setup. GitLab and GitLab Runner themselves run as rootless Podman services
 under their configured service users. GitLab, including its package registry,
@@ -155,6 +232,15 @@ TLS. To generate or renew only the PKI material, run:
 ./scripts/deploy.py --host localhost --tags pki
 ```
 
+## TLS and PKI
+
+The default deployment creates the private PKI required for GitLab TLS. Generate
+or renew only the PKI material with:
+
+```bash
+./scripts/deploy.py --host localhost --tags pki
+```
+
 ### PKI Locations
 
 The root CA, intermediate CA, and GitLab server certificate are generated on
@@ -166,9 +252,6 @@ is stored beneath:
 ~/.local/share/embtom/pki/
 ```
 
-This directory contains the root CA in `private/`, `csr/`, and `certs/`, and
-the intermediate CA plus GitLab server key and certificate beneath
-`intermediate/private/`, `intermediate/csr/`, and `intermediate/certs/`.
 Private CA keys remain on the control machine.
 
 GitLab's controller-side artifacts use the name `<hostname>-gitlab`, for
@@ -185,6 +268,20 @@ When the runner role is deployed, it also receives the root CA certificate at
 `/var/lib/gitlab-runner/config/certs/root-ca.crt`. Override these locations
 with the corresponding `pki_*`, `gitlab_service_*`, or `gitlab_runner_*`
 variables.
+
+## GitLab LDAP Authentication
+
+GitLab can authenticate users against the OpenLDAP infrastructure provided by
+[`embtom/openldap-infra`](https://github.com/embtom/openldap-infra).
+
+LDAP authentication is optional and disabled by default. The OpenLDAP
+integration can restrict GitLab access to members of a dedicated LDAP group
+using the `memberOf` attribute.
+
+The LDAP bind password is stored in Ansible Vault and is never passed as a
+command-line argument. For the complete LDAP deployment and group
+configuration, see the
+[`openldap-infra` documentation](https://github.com/embtom/openldap-infra).
 
 ## Deploy GitLab Runner
 
@@ -238,7 +335,7 @@ Provision an administrator:
   --provision-admin
 ```
 
-`--provision-admin` is a flag; it takes no value. User provisioning is
+`--provision-admin` is a flag and takes no value. User provisioning is
 idempotent: existing users are not modified.
 
 Promote an existing user, including an LDAP user who has logged in once, to an
@@ -251,24 +348,31 @@ administrator:
 This command only updates an existing GitLab account and does not require or
 change its password.
 
-Avoid entering production passwords directly in a shared shell history. The VS Code provisioning tasks use a masked password prompt and pass it without shell interpretation.
+Avoid entering production passwords directly into shared shell history. The VS
+Code provisioning tasks use a masked password prompt and pass the password
+without shell interpretation.
 
 ## Helper Commands
 
-See [doku/gitlab-helper-commands.md](doku/gitlab-helper-commands.md) for small operational helpers, including the command to list users from the running GitLab container. Backup and restore procedures are documented in [doku/gitlab-backup.md](doku/gitlab-backup.md).
+Operational helpers and recovery procedures are documented separately:
+
+- [GitLab helper commands](doku/gitlab-helper-commands.md)
+- [GitLab backup and restore](doku/gitlab-backup.md)
 
 ## Container Images And Releases
 
 Pull requests build both runner images as a verification step. Pushes to
-`main` publish their `latest` tags to GHCR:
+`main` publish the `latest` images to GHCR:
 
 - `ghcr.io/embtom/gitlab-infra/gitlab-runner:latest`
 - `ghcr.io/embtom/gitlab-infra/gitlab-runner-image:latest`
 
 Run the **Release** GitHub Actions workflow manually from the default branch to
-create a versioned release. It reads the newest semantic version from
-`CHANGELOG.md`, promotes both `latest` images to that version, and creates the
-matching GitHub release. Update the changelog before starting the workflow.
+create a versioned release. The release workflow reads the newest semantic
+version from `CHANGELOG.md`, promotes both `latest` images to that version, and
+creates the matching GitHub release. Update `CHANGELOG.md` before starting the
+release workflow. For deployments where reproducibility matters, prefer an
+explicit release tag over `latest`.
 
 ## Validation
 
@@ -278,6 +382,38 @@ matching GitHub release. Update the changelog before starting the workflow.
 
 ## VS Code Tasks
 
-The workspace provides tasks for installing dependencies, linting, PKI setup,
-GitLab and runner deployment, and regular-user and administrator provisioning.
-Run them from **Tasks: Run Task**.
+The workspace provides tasks for:
+
+- installing dependencies
+- linting Ansible
+- configuring GitLab and PKI
+- deploying GitLab and the GitLab Runner
+- provisioning regular users and new administrators
+- promoting an existing user, including an LDAP user, to administrator
+
+Run them from **Command Palette -> Tasks: Run Task**.
+
+## Storage and Recovery
+
+GitLab configuration, logs, and application data are stored outside the
+containers so that container replacement does not remove persistent state.
+
+Before destructive operations, ensure that GitLab backups and the required
+persistent directories are available. See [GitLab backup and restore](doku/gitlab-backup.md)
+and [GitLab helper commands](doku/gitlab-helper-commands.md). The deployment
+can recreate service containers without recreating persistent GitLab data.
+
+## Design Goals
+
+The project intentionally uses:
+
+- **rootless containers** instead of a rootful container runtime
+- **systemd Quadlet** instead of an additional container orchestration layer
+- **Ansible** for reproducible host configuration
+- **host-managed persistent storage** instead of container-local state
+- **private PKI** instead of disabling TLS verification
+- **versioned images** for reproducible deployments
+
+The goal is a small, transparent GitLab platform that integrates cleanly with
+standard Linux system administration rather than introducing another
+infrastructure layer.
