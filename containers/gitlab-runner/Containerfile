@@ -17,9 +17,13 @@ RUN runner_downloaded=0; \
   "https://gitlab-runner-downloads.s3.amazonaws.com/v${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64" \
   "https://gitlab-runner-downloads.s3.amazonaws.com/${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64"; do \
     if curl -fsSL "${runner_url}" -o /usr/local/bin/gitlab-runner; then \
-      chmod +x /usr/local/bin/gitlab-runner; \
-      runner_downloaded=1; \
-      break; \
+      expected_hash="$(curl -fsSL "${runner_url}.sha256" | tr -d '\r' | awk '{print $1}' | head -n 1)"; \
+      actual_hash="$(sha256sum /usr/local/bin/gitlab-runner | awk '{print $1}')"; \
+      if [ -n "${expected_hash}" ] && [ "${actual_hash}" = "${expected_hash}" ]; then \
+        chmod +x /usr/local/bin/gitlab-runner; \
+        runner_downloaded=1; \
+        break; \
+      fi; \
     fi; \
   done; \
   test "${runner_downloaded}" -eq 1
