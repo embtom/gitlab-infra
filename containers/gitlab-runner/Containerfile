@@ -21,7 +21,7 @@ RUN runner_downloaded=0; \
         expected_hash="$(printf '%s\n' "${checksum_line}" | awk '{print $1}')"; \
       else \
         rm -f /usr/local/bin/gitlab-runner; \
-        exit 1; \
+        continue; \
       fi; \
       if ! printf '%s\n' "${expected_hash}" | grep -Eq '^[0-9a-fA-F]{64}$'; then \
         rm -f /usr/local/bin/gitlab-runner; \
