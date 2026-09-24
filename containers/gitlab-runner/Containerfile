@@ -23,6 +23,10 @@ RUN runner_downloaded=0; \
         rm -f /usr/local/bin/gitlab-runner; \
         exit 1; \
       fi; \
+      if ! printf '%s\n' "${expected_hash}" | grep -Eq '^[0-9a-fA-F]{64}$'; then \
+        rm -f /usr/local/bin/gitlab-runner; \
+        continue; \
+      fi; \
       actual_hash="$(sha256sum /usr/local/bin/gitlab-runner | awk '{print $1}')"; \
       if [ -n "${expected_hash}" ] && [ "${actual_hash}" = "${expected_hash}" ]; then \
         chmod +x /usr/local/bin/gitlab-runner; \
