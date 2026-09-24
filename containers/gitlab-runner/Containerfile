@@ -14,6 +14,10 @@ RUN apt-get update && \
 
 RUN runner_downloaded=0; \
   for runner_url in \
+  "https://gitlab-runner-downloads.s3.dualstack.us-east-1.amazonaws.com/v${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64" \
+  "https://gitlab-runner-downloads.s3.dualstack.us-east-1.amazonaws.com/${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64" \
+  "https://gitlab-runner-downloads.s3.amazonaws.com/v${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64" \
+  "https://gitlab-runner-downloads.s3.amazonaws.com/${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64" \
   "https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/v${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64" \
   "https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64"; do \
     if curl -fsSL "${runner_url}" -o /usr/local/bin/gitlab-runner; then \
