@@ -24,6 +24,9 @@ RUN runner_downloaded=0; \
         runner_downloaded=1; \
         break; \
       fi; \
+      rm -f /usr/local/bin/gitlab-runner; \
+    else \
+      rm -f /usr/local/bin/gitlab-runner; \
     fi; \
   done; \
   test "${runner_downloaded}" -eq 1
