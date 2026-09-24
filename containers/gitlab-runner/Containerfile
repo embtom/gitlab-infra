@@ -12,10 +12,15 @@ RUN apt-get update && \
   tini && \
   rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL \
+RUN for runner_url in \
   "https://gitlab-runner-downloads.s3.amazonaws.com/v${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64" \
-  -o /usr/local/bin/gitlab-runner && \
-  chmod +x /usr/local/bin/gitlab-runner
+  "https://gitlab-runner-downloads.s3.amazonaws.com/${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64"; do \
+    if curl -fsSL "${runner_url}" -o /usr/local/bin/gitlab-runner; then \
+      chmod +x /usr/local/bin/gitlab-runner; \
+      exit 0; \
+    fi; \
+  done; \
+  exit 1
 
 RUN mkdir -p /etc/gitlab-runner /builds /cache /opt/gitlab-runner
 
