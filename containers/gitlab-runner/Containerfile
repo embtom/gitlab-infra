@@ -9,18 +9,26 @@ RUN apt-get update && \
   curl \
   git \
   bash \
+  gpg \
   tini && \
   rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL \
-  "https://gitlab-runner-downloads.s3.amazonaws.com/v${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64" \
-  -o /usr/local/bin/gitlab-runner && \
-  chmod +x /usr/local/bin/gitlab-runner
+RUN . /etc/os-release && \
+  trap 'rm -f /usr/sbin/policy-rc.d' EXIT && \
+  curl -fsSL "https://packages.gitlab.com/runner/gitlab-runner/gpgkey" | \
+    gpg --dearmor -o /usr/share/keyrings/gitlab-runner-archive-keyring.gpg && \
+  echo "deb [signed-by=/usr/share/keyrings/gitlab-runner-archive-keyring.gpg] https://packages.gitlab.com/runner/gitlab-runner/debian/ ${VERSION_CODENAME} main" > /etc/apt/sources.list.d/gitlab-runner.list && \
+  mkdir -p /etc/init.d && \
+  printf '#!/bin/sh\nexit 101\n' > /usr/sbin/policy-rc.d && \
+  chmod +x /usr/sbin/policy-rc.d && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends "gitlab-runner=${GITLAB_RUNNER_VERSION}*" && \
+  rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /etc/gitlab-runner /builds /cache /opt/gitlab-runner
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 
-CMD ["/usr/local/bin/gitlab-runner", "run", \
+CMD ["/usr/bin/gitlab-runner", "run", \
   "--working-directory", "/opt/gitlab-runner", \
   "--config", "/etc/gitlab-runner/config.toml"]
