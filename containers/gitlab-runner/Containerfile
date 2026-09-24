@@ -14,8 +14,8 @@ RUN apt-get update && \
 
 RUN runner_downloaded=0; \
   for runner_url in \
-  "https://gitlab-runner-downloads.s3.amazonaws.com/v${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64" \
-  "https://gitlab-runner-downloads.s3.amazonaws.com/${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64"; do \
+  "https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/v${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64" \
+  "https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/${GITLAB_RUNNER_VERSION}/binaries/gitlab-runner-linux-amd64"; do \
     if curl -fsSL "${runner_url}" -o /usr/local/bin/gitlab-runner; then \
       if curl -fsSL "${runner_url}.sha256" -o /tmp/gitlab-runner.sha256; then \
         checksum_line="$(tr -d '\r' </tmp/gitlab-runner.sha256 | head -n 1)"; \
