@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+
+version="$1"
+keyring=/usr/share/keyrings/gitlab-runner-archive-keyring.gpg
+source_file=/etc/apt/sources.list.d/gitlab-runner.sources
+
+# Prevent package post-install scripts from starting services during the image build.
+trap 'rm -f /usr/sbin/policy-rc.d' EXIT
+mkdir -p /etc/init.d
+printf '#!/bin/sh\nexit 101\n' >/usr/sbin/policy-rc.d
+chmod +x /usr/sbin/policy-rc.d
+
+curl -fsSL "https://packages.gitlab.com/runner/gitlab-runner/gpgkey" |
+  gpg --dearmor -o "${keyring}"
+cat >"${source_file}" <<EOF
+Types: deb
+URIs: https://packages.gitlab.com/runner/gitlab-runner/debian/
+Suites: trixie
+Components: main
+Signed-By: ${keyring}
+EOF
+
+apt-get update
+apt-get install -y --no-install-recommends "gitlab-runner=${version}*"
+rm -rf /var/lib/apt/lists/*
