@@ -73,7 +73,7 @@
       - --volume
       - "{{ gitlab_runner_config_dir }}:/etc/gitlab-runner"
       - --entrypoint
-      - /usr/local/bin/gitlab-runner
+      - /usr/bin/gitlab-runner
       - "{{ gitlab_runner_image }}"
       - register
       - --non-interactive
