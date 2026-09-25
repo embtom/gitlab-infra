@@ -13,17 +13,9 @@ RUN apt-get update && \
   tini && \
   rm -rf /var/lib/apt/lists/*
 
-RUN . /etc/os-release && \
-  trap 'rm -f /usr/sbin/policy-rc.d' EXIT && \
-  curl -fsSL "https://packages.gitlab.com/runner/gitlab-runner/gpgkey" | \
-    gpg --dearmor -o /usr/share/keyrings/gitlab-runner-archive-keyring.gpg && \
-  echo "deb [signed-by=/usr/share/keyrings/gitlab-runner-archive-keyring.gpg] https://packages.gitlab.com/runner/gitlab-runner/debian/ ${VERSION_CODENAME} main" > /etc/apt/sources.list.d/gitlab-runner.list && \
-  mkdir -p /etc/init.d && \
-  printf '#!/bin/sh\nexit 101\n' > /usr/sbin/policy-rc.d && \
-  chmod +x /usr/sbin/policy-rc.d && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends "gitlab-runner=${GITLAB_RUNNER_VERSION}*" && \
-  rm -rf /var/lib/apt/lists/*
+COPY scripts/install-gitlab-runner /usr/local/bin/install-gitlab-runner
+RUN chmod 0755 /usr/local/bin/install-gitlab-runner && \
+  /usr/local/bin/install-gitlab-runner "${GITLAB_RUNNER_VERSION}"
 
 RUN mkdir -p /etc/gitlab-runner /builds /cache /opt/gitlab-runner
 
