@@ -40,7 +40,7 @@ runs:
           python3-pip \
           fuse-overlayfs \
           uidmap \
-          qemu-user-static \
+          qemu-user-binfmt \
           yq
         sudo chown -R "$USER" ~/apt-cache
 
