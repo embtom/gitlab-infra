@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+# Use this script to copy all persistent GitLab storage to a separate backup
+# filesystem. Start it as a transient systemd service, supplying the mount
+# point of that filesystem:
+#
+#   sudo systemd-run \
+#       --unit=gitlab-backup \
+#       /mnt/data_gitlab/gitlab-backup /mnt/data_gitlab/backup
+#
+# The script refuses a target on the same filesystem as /mnt/data_gitlab/data.
+# It creates (or replaces) the daily backup directory
+# /mnt/data_gitlab/backup/gitlab-YYYY-MM-DD, containing config, logs, and data.
+
+set -euo pipefail
+
+GITLAB_SERVICE_USER="${GITLAB_SERVICE_USER:-gitlab}"
+GITLAB_CONFIG_DIR="${GITLAB_CONFIG_DIR:-/var/lib/gitlab/config}"
+GITLAB_LOGS_DIR="${GITLAB_LOGS_DIR:-/var/lib/gitlab/logs}"
+GITLAB_DATA_DIR="${GITLAB_DATA_DIR:-/mnt/data_gitlab/data}"
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 BACKUP_BASE_DIRECTORY" >&2
+  exit 2
+fi
+
+backup_base_dir="$1"
+backup_date="$(date +%F)"
+target_dir="${backup_base_dir}/gitlab-${backup_date}"
+
+if [[ $EUID -ne 0 && $(id -un) != "$GITLAB_SERVICE_USER" ]]; then
+  echo "ERROR: Run this script as '$GITLAB_SERVICE_USER'." >&2
+  exit 1
+fi
+
+for source_dir in "$GITLAB_CONFIG_DIR" "$GITLAB_LOGS_DIR" "$GITLAB_DATA_DIR"; do
+  if [[ ! -d "$source_dir" ]]; then
+    echo "ERROR: Source directory does not exist: $source_dir" >&2
+    exit 1
+  fi
+done
+
+mkdir -p -- "$backup_base_dir"
+
+source_mount="$(findmnt --noheadings --output SOURCE --target "$GITLAB_DATA_DIR")"
+backup_mount="$(findmnt --noheadings --output SOURCE --target "$backup_base_dir")"
+if [[ $source_mount == "$backup_mount" ]]; then
+  echo "ERROR: Backup target must be on a separate filesystem from GitLab data." >&2
+  exit 1
+fi
+
+echo "==> Copying persistent GitLab storage to $target_dir"
+mkdir -p -- "$target_dir"
+rsync --archive --hard-links --acls --xattrs --delete \
+  "${GITLAB_CONFIG_DIR}/" "${target_dir}/config/"
+rsync --archive --hard-links --acls --xattrs --delete \
+  "${GITLAB_LOGS_DIR}/" "${target_dir}/logs/"
+rsync --archive --hard-links --acls --xattrs --delete \
+  "${GITLAB_DATA_DIR}/" "${target_dir}/data/"
+
+echo "==> Backup completed: $target_dir"
