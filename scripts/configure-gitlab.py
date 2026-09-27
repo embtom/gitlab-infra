@@ -100,7 +100,7 @@ def main() -> int:
         configuration: dict[str, object] = {"gitlab_service_ldap_enabled": ldap_enabled}
         if ldap_enabled:
             configuration["gitlab_service_ldap_host"] = read_setting(
-                "LDAP certificate hostname"
+                "LDAP certificate hostname (run 'hostname -f' on the LDAP host)"
             )
             if confirm("Is OpenLDAP running on the same host as GitLab?"):
                 configuration["gitlab_service_ldap_host_address"] = "host-gateway"
