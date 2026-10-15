@@ -22,5 +22,7 @@ Signed-By: ${keyring}
 EOF
 
 apt-get update
+apt-cache policy gitlab-runner
+apt-cache madison gitlab-runner
 apt-get install -y --no-install-recommends "gitlab-runner=${version}*"
 rm -rf /var/lib/apt/lists/*
