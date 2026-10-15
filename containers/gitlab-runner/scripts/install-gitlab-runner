@@ -22,5 +22,10 @@ Signed-By: ${keyring}
 EOF
 
 apt-get update
-apt-get install -y --no-install-recommends "gitlab-runner=${version}*"
+apt-cache policy gitlab-runner
+apt-cache madison gitlab-runner
+# Keep the helper image package aligned with the GitLab Runner version.
+apt-get install -y --no-install-recommends \
+  "gitlab-runner=${version}*" \
+  "gitlab-runner-helper-images=${version}*"
 rm -rf /var/lib/apt/lists/*
