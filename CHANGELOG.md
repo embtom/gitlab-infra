@@ -4,25 +4,19 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.0.0] - 2026-08-31
+## [1.0.0] - 2026-10-28
 
 ### Added
 
-- GitLab Runner configuration supporting both image-pull and direct-build workflows
-- GitLab CE deployment as a rootless Podman Quadlet service
-- Configurable persistent storage for GitLab configuration, logs, and data
-- Idempotent provisioning of regular users and administrators
-- GitLab Runner configuration, including registration and request-concurrency settings
-- Container Registry support and SSH-based repository cloning
-- Automated PKI setup for a root CA, intermediate CA, and GitLab TLS certificate
-- Operational documentation covering backups, restores, and common GitLab commands
-- GitHub Actions CI for dependency installation, Ansible linting, and SARIF lint-result reporting
+- Rootless Podman Quadlet deployment for GitLab CE, with persistent configuration, logs, and data.
+- GitLab Runner support for image-pull and direct-build workflows, including registration, concurrency, and image-pull policy settings.
+- User and administrator provisioning, Container Registry support, and SSH repository cloning.
+- Automated PKI for the root and intermediate CAs and GitLab TLS certificate, plus operational documentation and GitHub Actions CI.
 
 ### Changed
 
-- Extended the default GitLab TLS certificate validity period to ten years.
-- Added configurable job image pull policy support for GitLab Runner.
+- Extended the default GitLab TLS certificate validity to ten years.
 
 ### Security
 
-- Added TLS support for the GitLab service using a custom certificate and key.
+- Enabled TLS for GitLab with a custom certificate and key.
