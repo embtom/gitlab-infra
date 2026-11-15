@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.0] - 2026-11-15
+
+### Changed
+
+- Updated GitLab CE to 19.5.5 and GitLab Runner to 19.5.3.
+- Clarified the LDAP certificate hostname prompt with guidance for obtaining the fully qualified LDAP hostname.
+
 ## [1.0.0] - 2026-10-28
 
 ### Added
