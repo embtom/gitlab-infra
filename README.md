@@ -180,15 +180,15 @@ gitlab_service_registry_port: 5050
 gitlab_service_data_dir: /srv/gitlab/data
 
 gitlab_runner_container_method: image-pull
-gitlab_runner_image_pull_image: ghcr.io/embtom/gitlab-infra/gitlab-runner:latest
-gitlab_runner_image_pull_job_image: ghcr.io/embtom/gitlab-infra/gitlab-runner-image:latest
 gitlab_runner_request_concurrency: 2
 ```
 
-For production deployments, use a release-tagged runner image instead of
-`latest`. Set `gitlab_runner_container_method: direct-build` to build and
-transfer both runner images from the control machine instead of pulling them
-from GHCR.
+`gitlab_infra_image_tag` selects the release tag for both prebuilt runner
+images and defaults to `latest` when unset. The deploy scripts automatically
+pass the highest local numeric release tag as an extra variable, overriding the
+inventory value; if no such tag exists, the inventory value or default applies.
+Set `gitlab_runner_container_method: direct-build` to build and transfer both
+runner images from the control machine instead of pulling them from GHCR.
 
 ## Deploy GitLab
 
@@ -297,13 +297,13 @@ prebuilt images published by this repository:
 
 ```yaml
 gitlab_runner_container_method: image-pull
-gitlab_runner_image_pull_image: ghcr.io/embtom/gitlab-infra/gitlab-runner:latest
-gitlab_runner_image_pull_job_image: ghcr.io/embtom/gitlab-infra/gitlab-runner-image:latest
 ```
 
-Use a release tag instead of `latest` to pin the deployed images. For an
-offline build or local image customization, switch to `direct-build`; the
-control machine builds both images and transfers them to the target:
+The deploy scripts select the highest local numeric release tag for both images.
+Without such a tag, `gitlab_infra_image_tag` from inventory applies, or `latest`
+if unset. The individual image variables can still be overridden. For an
+offline build or local image customization, switch to `direct-build`; the control
+machine builds both images and transfers them to the target:
 
 ```yaml
 gitlab_runner_container_method: direct-build

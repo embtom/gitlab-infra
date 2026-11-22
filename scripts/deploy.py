@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import re
 import signal
 import site
 import subprocess
@@ -190,6 +191,25 @@ def main() -> int:
     script_dir = Path(__file__).resolve().parent
     ansible_dir = script_dir.parent / "ansible"
     vault_file = ansible_dir / "inventories/group_vars/all/vault.yml"
+
+    result = subprocess.run(
+        ["git", "-C", str(script_dir), "tag", "--list"],
+        stdout=subprocess.PIPE,
+        text=True,
+        check=True,
+    )
+    release_tags = [
+        tag for tag in result.stdout.splitlines()
+        if re.fullmatch(r"\d+\.\d+\.\d+", tag, flags=re.ASCII)
+    ]
+    image_tag = max(
+        release_tags, key=lambda tag: tuple(map(int, tag.split("."))), default=None
+    )
+    if image_tag:
+        extra_vars["gitlab_infra_image_tag"] = image_tag
+        print(f"Deploying container image tag: {image_tag}")
+    else:
+        print("No release tag found; using the configured image tag (default: latest).")
 
     environment = os.environ.copy()
     user_bin = Path(site.getuserbase()) / "bin"

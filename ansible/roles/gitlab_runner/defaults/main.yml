@@ -3,7 +3,9 @@ gitlab_runner_user: gitlab-runner
 gitlab_runner_version: "19.6.0"
 gitlab_runner_container_method: image-pull
 gitlab_runner_direct_build_image: "localhost/gitlab-runner:{{ gitlab_runner_version }}"
-gitlab_runner_image_pull_image: "ghcr.io/embtom/gitlab-infra/gitlab-runner:latest"
+gitlab_runner_image_pull_image: >-
+  ghcr.io/embtom/gitlab-infra/gitlab-runner:{{
+  gitlab_infra_image_tag | default('latest') }}
 gitlab_runner_image: >-
   {{ gitlab_runner_direct_build_image
      if gitlab_runner_container_method == 'direct-build'
@@ -13,7 +15,9 @@ gitlab_runner_podman_build_extra_args: >-
 
 gitlab_runner_force_rebuild: false
 gitlab_runner_direct_build_job_image: "localhost/gitlab-runner-image:latest"
-gitlab_runner_image_pull_job_image: "ghcr.io/embtom/gitlab-infra/gitlab-runner-image:latest"
+gitlab_runner_image_pull_job_image: >-
+  ghcr.io/embtom/gitlab-infra/gitlab-runner-image:{{
+  gitlab_infra_image_tag | default('latest') }}
 gitlab_runner_job_image: >-
   {{ gitlab_runner_direct_build_job_image
      if gitlab_runner_container_method == 'direct-build'
