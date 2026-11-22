@@ -161,6 +161,8 @@
   become: true
   notify: Restart GitLab Runner service
   loop:
+    - key: image
+      value: "{{ gitlab_runner_job_image | to_json }}"
     - key: pull_policy
       value: "{{ gitlab_runner_job_image_pull_policy | to_json }}"
     - key: network_mode
